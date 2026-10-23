@@ -259,12 +259,13 @@ const stopEditing = () => {
 		$("edit-box").hidden = true;
 		document.body.append($("edit-box"));
 		editing.redraw();
+		editing.actions.hidden = false;
 		editing = undefined;
 	}
 };
 
-const decide = (req, decision, set = req.set) => {
-	pending[req.key] = { decision, srID: req.srID, set };
+const decide = (req, decision, set = req.set, edited = false) => {
+	pending[req.key] = { decision, srID: req.srID, set, edited };
 	savePending();
 	render();
 };
@@ -273,7 +274,10 @@ const card = (req) => {
 	const div = document.createElement("div");
 	div.className = "review-card";
 	const current = req.row[4];
-	const proposed = applySet(current, req.set);
+	// Once accepted with edits, the card shows the edited face, which is what gets published
+	const chosen = pending[req.key];
+	const edited = chosen?.decision === "accepted" && chosen.edited;
+	const proposed = applySet(current, edited ? chosen.set : req.set);
 	const lines = diff(current, proposed);
 
 	const head = document.createElement("div");
@@ -349,7 +353,7 @@ const card = (req) => {
 	if (decision) {
 		const status = document.createElement("span");
 		status.className = decision === "accepted" ? "text-success" : "text-body-secondary";
-		status.textContent = `${decision === "accepted" ? "Accepted" : "Declined"}${pending[req.key] ? " (not published)" : ""}`;
+		status.textContent = `${decision === "accepted" ? (edited ? "Accepted with your edits" : "Accepted") : "Declined"}${pending[req.key] ? " (not published)" : ""}`;
 		actions.append(status);
 		if (pending[req.key]) {
 			button("Undo", "btn-light border", () => {
@@ -364,7 +368,9 @@ const card = (req) => {
 		accept.disabled = req.bad || (lines.length === 0 && !matches);
 		button("Edit", "btn-light border", () => {
 			stopEditing();
-			editing = { req, row: req.row, redraw };
+			// Only Accept edit and Cancel while editing, so the suggestion as sent can't be accepted by mistake
+			actions.hidden = true;
+			editing = { req, row: req.row, redraw, actions };
 			div.append($("edit-box"));
 			$("edit-box").hidden = false;
 			editor.start(current, req.bad ? current : proposed);
@@ -390,7 +396,7 @@ $("edit-accept").onclick = () => {
 		set[path] = getPath(face, path);
 	}
 	stopEditing();
-	decide(req, "accepted", set);
+	decide(req, "accepted", set, true);
 };
 $("edit-cancel").onclick = stopEditing;
 

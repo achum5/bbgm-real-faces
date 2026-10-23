@@ -353,6 +353,10 @@ h3 { font-size: 16px; }
 }
 
 /* Review page */
+/* Bootstrap's d-flex would otherwise beat the hidden attribute */
+.d-flex[hidden] {
+	display: none !important;
+}
 .review-page {
 	padding-bottom: 70px;
 }
@@ -379,6 +383,14 @@ h3 { font-size: 16px; }
 	padding: 6px 8px;
 	background: var(--bs-tertiary-bg);
 	white-space: pre-wrap;
+}
+/* Stays in view while scrolling through the options */
+.edit-actions {
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	padding: 6px 0 8px;
+	background: var(--bs-body-bg);
 }
 .publish-bar {
 	position: fixed;
