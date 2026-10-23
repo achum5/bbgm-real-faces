@@ -16,6 +16,10 @@ const HAIR_COLORS = ["#0f0902", "#1c1008", "#272421", "#3D2314", "#5A3825", "#7a
 
 const $ = (id) => document.getElementById(id);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+// Counted in GoatCounter alongside page views, when it has loaded
+const countEvent = (path, title) => {
+	window.goatcounter?.count?.({ path, title, event: true });
+};
 const shuffle = (list) => {
 	const out = [...list];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -634,6 +638,7 @@ $("send").onclick = async () => {
 		startEditing();
 		$("sent").className = "text-success";
 		$("sent").textContent = "Sent. Thanks!";
+		countEvent("change-request", "Change request sent");
 	} catch {
 		$("sent").className = "text-danger";
 		$("sent").textContent = "Couldn't send. Try again?";
@@ -870,4 +875,7 @@ const copyText = async (text, button) => {
 	}, 1500);
 };
 
-$("copy").onclick = () => copyText(buildCode(), $("copy"));
+$("copy").onclick = () => {
+	copyText(buildCode(), $("copy"));
+	countEvent("copy-faces", "Copy faces");
+};
