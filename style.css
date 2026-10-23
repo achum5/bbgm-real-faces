@@ -351,3 +351,42 @@ h3 { font-size: 16px; }
 	padding: 2px;
 	border-radius: 0;
 }
+
+/* Review page */
+.review-page {
+	padding-bottom: 70px;
+}
+.settings {
+	max-width: 520px;
+}
+.review-card {
+	padding: 10px 0 14px;
+	border-bottom: 1px solid var(--bs-border-color);
+	max-width: 720px;
+}
+.review-card .viewer {
+	margin-top: 0;
+	max-width: 560px;
+}
+.changes {
+	margin: 6px 0 0;
+	padding-left: 18px;
+	font-family: var(--bs-font-monospace);
+	font-size: 12px;
+}
+.review-card .note {
+	margin-top: 6px;
+	padding: 6px 8px;
+	background: var(--bs-tertiary-bg);
+	white-space: pre-wrap;
+}
+.publish-bar {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 10px 0;
+	background: var(--bs-body-bg);
+	border-top: 1px solid var(--bs-border-color);
+	z-index: 30;
+}

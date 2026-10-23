@@ -1,4 +1,5 @@
 import { display } from "./faces.js";
+import { createEditor, diff } from "./editor.js";
 
 const SITE = new URL(".", location.href).href;
 
@@ -10,9 +11,6 @@ const FORM = {
 	face: "entry.823317504",
 	note: "entry.1810661261",
 };
-
-const SKINS = ["#f2d0b8", "#ecc8b3", "#e3bda5", "#ddb7a0", "#d9a886", "#cc9a78", "#c49070", "#bb876f", "#b07a5f", "#a67358", "#9b6a50", "#8d5d45", "#80523e", "#7a4a36", "#6e4030", "#673a2a", "#5a3626", "#4a2c20"];
-const HAIR_COLORS = ["#0f0902", "#1c1008", "#272421", "#3D2314", "#5A3825", "#7a5230", "#9a6a40", "#b8925a", "#c8a878", "#d8c8a0", "#b0602e", "#8c8c8c", "#d9d9d9"];
 
 const $ = (id) => document.getElementById(id);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
@@ -255,7 +253,6 @@ requestAnimationFrame(tick);
 
 // Viewer
 let current;
-let edited;
 const nameInput = $("name");
 const viewerFace = $("viewer-face");
 
@@ -271,11 +268,11 @@ const fitName = () => {
 
 // The face as it is, and once it's been edited, an arrow to the new one
 const drawViewer = () => {
-	const changed = edited !== undefined && changes().length > 0;
+	const changed = editor.face !== undefined && changes().length > 0;
 	viewerFace.innerHTML = faceSvg(current);
 	$("viewer-arrow").hidden = !changed;
 	$("viewer-new").hidden = !changed;
-	$("viewer-new").innerHTML = changed ? faceSvg(current, edited) : "";
+	$("viewer-new").innerHTML = changed ? faceSvg(current, editor.face) : "";
 };
 
 const show = (p, scroll) => {
@@ -297,7 +294,6 @@ const show = (p, scroll) => {
 	}
 };
 $("random").onclick = () => show(pick(players));
-show(pick(players));
 
 // Search: the player's name is the search box
 const matchesBox = $("matches");
@@ -374,80 +370,20 @@ nameInput.onblur = () => {
 	fitName();
 };
 
-// Change requests: edit the face like the facesjs editor, add a note, send.
-// Each option tile is zoomed in on its feature, as a box in the face's own
-// 400x600 drawing: [x, y, width, height].
-const HEAD = [-10, 90, 420, 420];
-const CROPS = {
-	head: HEAD,
-	hair: [10, 0, 380, 380],
-	hairBg: [-50, 40, 500, 560],
-	eye: [90, 250, 220, 110],
-	eyebrow: [90, 225, 220, 110],
-	nose: [135, 325, 130, 100],
-	mouth: [130, 395, 140, 90],
-	facialHair: [60, 280, 280, 280],
-	ear: [30, 230, 340, 170],
-	eyeLine: [90, 225, 220, 140],
-	smileLine: [110, 330, 180, 135],
-	miscLine: HEAD,
-	glasses: [60, 220, 280, 150],
-	accessories: [10, 30, 380, 260],
-};
+// Change requests: edit the face, add a note, send
+const editor = createEditor({
+	tabs: $("parts"),
+	panel: $("part"),
+	options,
+	draw: (face) => faceSvg(current, face),
+	onChange: () => {
+		$("sent").textContent = "";
+		drawViewer();
+		updateSend();
+	},
+});
 
-const PARTS = [
-	{ label: "Head", rows: [["head", "Shape"]], sliders: [["fatness", "Width", 0, 1, 0.05]], colors: ["body.color", SKINS, "Skin"] },
-	{ label: "Hair", rows: [["hair", "Style"], ["hairBg", "Behind the head"]], colors: ["hair.color", HAIR_COLORS, "Color"] },
-	{ label: "Eyes", rows: [["eye"]], sliders: [["eye.angle", "Tilt", -10, 15, 1]] },
-	{ label: "Brows", rows: [["eyebrow"]], sliders: [["eyebrow.angle", "Tilt", -15, 20, 1]] },
-	{ label: "Nose", rows: [["nose"]], sliders: [["nose.size", "Size", 0.5, 1.25, 0.05]] },
-	{ label: "Mouth", rows: [["mouth"]] },
-	{ label: "Facial hair", rows: [["facialHair"]], sliders: [["stubble", "Stubble", 0, 0.6, 0.05]] },
-	{ label: "Ears", rows: [["ear"]], sliders: [["ear.size", "Size", 0.5, 1.5, 0.05]] },
-	{ label: "Lines", rows: [["eyeLine", "Around the eyes"], ["smileLine", "Smile lines"], ["miscLine", "Other"]] },
-	{ label: "Extras", rows: [["glasses", "Glasses"], ["accessories", "Headwear"]] },
-];
-
-const getPath = (face, path) => {
-	if (path === "stubble") {
-		return Number(face.head.shave?.match(/([\d.]+)\)$/)?.[1] ?? 0);
-	}
-	return path.split(".").reduce((o, k) => o?.[k], face);
-};
-const setPath = (face, path, value) => {
-	if (path === "stubble") {
-		const shave = face.head.shave || "rgba(0,0,0,0)";
-		face.head.shave = shave.replace(/[\d.]+\)$/, `${value})`);
-		return;
-	}
-	const keys = path.split(".");
-	let o = face;
-	for (const k of keys.slice(0, -1)) {
-		o = o[k] ??= {};
-	}
-	o[keys.at(-1)] = value;
-};
-
-let partIndex = 0;
-let thumbJob = 0;
-
-const flatten = (o, prefix = "", out = {}) => {
-	for (const [k, v] of Object.entries(o)) {
-		if (v && typeof v === "object" && !Array.isArray(v)) {
-			flatten(v, `${prefix}${k}.`, out);
-		} else {
-			out[prefix + k] = v;
-		}
-	}
-	return out;
-};
-const changes = () => {
-	const a = flatten(current.face);
-	const b = flatten(edited);
-	return Object.keys(b)
-		.filter((k) => a[k] !== b[k])
-		.map((k) => `${k}: ${a[k]} -> ${b[k]}`);
-};
+const changes = () => diff(current.face, editor.face);
 
 // Send only once there's something to send
 const updateSend = () => {
@@ -455,162 +391,26 @@ const updateSend = () => {
 };
 
 const startEditing = () => {
-	edited = structuredClone(current.face);
+	editor.start(current.face);
 	$("note").value = "";
 	$("sent").textContent = "";
-	renderPart();
 	drawViewer();
 	updateSend();
-};
-
-const change = (path, value) => {
-	setPath(edited, path, value);
-	$("sent").textContent = "";
-	drawViewer();
-	renderPart();
-	updateSend();
-};
-
-const renderParts = () => {
-	const list = $("parts");
-	list.innerHTML = "";
-	for (const [i, part] of PARTS.entries()) {
-		const button = document.createElement("button");
-		button.type = "button";
-		button.className = i === partIndex ? "active" : "";
-		button.textContent = part.label;
-		button.onclick = () => {
-			partIndex = i;
-			renderParts();
-			renderPart();
-		};
-		list.append(button);
-	}
-};
-
-const cropped = (face, [x, y, w, h]) =>
-	faceSvg(current, face)
-		.replace(/viewBox="[^"]*"/, `viewBox="${x} ${y} ${w} ${h}"`)
-		.replace(/preserveAspectRatio="[^"]*"/, 'preserveAspectRatio="xMidYMid meet"');
-
-// Thumbnails are drawn a few at a time so the page never locks up
-const drawThumbs = (jobs) => {
-	const job = ++thumbJob;
-	let i = 0;
-	const step = () => {
-		if (job !== thumbJob) {
-			return;
-		}
-		for (const end = Math.min(i + 8, jobs.length); i < end; i++) {
-			const [el, face, crop] = jobs[i];
-			el.innerHTML = cropped(face, crop);
-		}
-		if (i < jobs.length) {
-			requestAnimationFrame(step);
-		}
-	};
-	step();
-};
-
-const label = (text) => {
-	const h = document.createElement("div");
-	h.className = "row-label";
-	h.textContent = text;
-	return h;
-};
-
-const renderPart = () => {
-	const part = PARTS[partIndex];
-	const box = $("part");
-	box.innerHTML = "";
-	const jobs = [];
-	for (const [feature, text] of part.rows) {
-		if (text) {
-			box.append(label(text));
-		}
-		const grid = document.createElement("div");
-		grid.className = "options";
-		const now = edited[feature]?.id;
-		const was = current.face[feature]?.id;
-		const crop = CROPS[feature];
-		for (const id of options[feature]) {
-			const button = document.createElement("button");
-			button.type = "button";
-			// The player's own option keeps a dot, so it's easy to go back to
-			button.className = `option${id === now ? " selected" : ""}${id === was ? " original" : ""}`;
-			button.style.aspectRatio = `${crop[2]} / ${crop[3]}`;
-			button.title = id === was ? `${id} (current)` : id;
-			button.onclick = () => change(`${feature}.id`, id);
-			const face = structuredClone(edited);
-			setPath(face, `${feature}.id`, id);
-			jobs.push([button, face, crop]);
-			grid.append(button);
-		}
-		box.append(grid);
-	}
-	for (const [path, text, min, max, stepSize] of part.sliders ?? []) {
-		const row = document.createElement("label");
-		row.className = "slider";
-		const name = document.createElement("span");
-		name.textContent = text;
-		const input = document.createElement("input");
-		input.type = "range";
-		input.className = "form-range";
-		Object.assign(input, { min, max, step: stepSize, value: getPath(edited, path) ?? min });
-		input.oninput = () => {
-			setPath(edited, path, Number(input.value));
-			drawViewer();
-			updateSend();
-		};
-		input.onchange = () => renderPart();
-		row.append(name, input);
-		box.append(row);
-	}
-	if (part.colors) {
-		const [path, swatches, text] = part.colors;
-		box.append(label(text));
-		const row = document.createElement("div");
-		row.className = "swatches";
-		const now = String(getPath(edited, path)).toLowerCase();
-		for (const color of swatches) {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.className = `swatch${color.toLowerCase() === now ? " selected" : ""}`;
-			button.style.background = color;
-			button.title = color;
-			button.onclick = () => change(path, color);
-			row.append(button);
-		}
-		const custom = document.createElement("input");
-		custom.type = "color";
-		custom.className = "form-control form-control-color";
-		custom.value = /^#[\da-f]{6}$/i.test(now) ? now : "#000000";
-		custom.title = "Pick any color";
-		custom.oninput = () => {
-			setPath(edited, path, custom.value);
-			drawViewer();
-			updateSend();
-		};
-		custom.onchange = () => renderPart();
-		row.append(custom);
-		box.append(row);
-	}
-	drawThumbs(jobs);
 };
 
 const openEditor = (open) => {
 	$("request").hidden = !open;
 	$("request-toggle").setAttribute("aria-expanded", String(open));
 	if (open) {
-		renderParts();
 		startEditing();
 		$("request").scrollIntoView({ behavior: "smooth", block: "nearest" });
 	} else {
-		edited = undefined;
-		thumbJob++;
+		editor.stop();
 		drawViewer();
 	}
 };
+
+show(pick(players));
 
 $("request-row").hidden = !FORM;
 $("request-toggle").onclick = () => openEditor($("request").hidden);
@@ -626,7 +426,7 @@ $("send").onclick = async () => {
 	const body = new URLSearchParams({
 		[FORM.player]: `${current.name} (${current.year}) ${current.id}`,
 		[FORM.change]: list.join("\n"),
-		[FORM.face]: JSON.stringify(edited),
+		[FORM.face]: JSON.stringify(editor.face),
 		[FORM.note]: note,
 	});
 	$("send").disabled = true;
