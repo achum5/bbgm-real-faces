@@ -238,17 +238,37 @@ nameInput.onblur = () => {
 	fitName();
 };
 
-// Change requests: edit the face like the facesjs editor, add a note, send
+// Change requests: edit the face like the facesjs editor, add a note, send.
+// Each option tile is zoomed in on its feature, as a box in the face's own
+// 400x600 drawing: [x, y, width, height].
+const HEAD = [-10, 90, 420, 420];
+const CROPS = {
+	head: HEAD,
+	hair: [10, 0, 380, 380],
+	hairBg: [-50, 40, 500, 560],
+	eye: [90, 250, 220, 110],
+	eyebrow: [90, 225, 220, 110],
+	nose: [135, 325, 130, 100],
+	mouth: [130, 395, 140, 90],
+	facialHair: [60, 280, 280, 280],
+	ear: [30, 230, 340, 170],
+	eyeLine: [90, 225, 220, 140],
+	smileLine: [110, 330, 180, 135],
+	miscLine: HEAD,
+	glasses: [60, 220, 280, 150],
+	accessories: [10, 30, 380, 260],
+};
+
 const PARTS = [
-	{ label: "Head", rows: [["head"]], sliders: [["fatness", "Width", 0, 1, 0.05]], colors: ["body.color", SKINS] },
-	{ label: "Hair", rows: [["hair"], ["hairBg", "Back"]], colors: ["hair.color", HAIR_COLORS] },
-	{ label: "Eyes", rows: [["eye"]], sliders: [["eye.angle", "Angle", -10, 15, 1]] },
-	{ label: "Brows", rows: [["eyebrow"]], sliders: [["eyebrow.angle", "Angle", -15, 20, 1]] },
+	{ label: "Head", rows: [["head", "Shape"]], sliders: [["fatness", "Width", 0, 1, 0.05]], colors: ["body.color", SKINS, "Skin"] },
+	{ label: "Hair", rows: [["hair", "Style"], ["hairBg", "Behind the head"]], colors: ["hair.color", HAIR_COLORS, "Color"] },
+	{ label: "Eyes", rows: [["eye"]], sliders: [["eye.angle", "Tilt", -10, 15, 1]] },
+	{ label: "Brows", rows: [["eyebrow"]], sliders: [["eyebrow.angle", "Tilt", -15, 20, 1]] },
 	{ label: "Nose", rows: [["nose"]], sliders: [["nose.size", "Size", 0.5, 1.25, 0.05]] },
 	{ label: "Mouth", rows: [["mouth"]] },
 	{ label: "Facial hair", rows: [["facialHair"]], sliders: [["stubble", "Stubble", 0, 0.6, 0.05]] },
 	{ label: "Ears", rows: [["ear"]], sliders: [["ear.size", "Size", 0.5, 1.5, 0.05]] },
-	{ label: "Lines", rows: [["eyeLine", "Eyes"], ["smileLine", "Smile"], ["miscLine", "Other"]] },
+	{ label: "Lines", rows: [["eyeLine", "Around the eyes"], ["smileLine", "Smile lines"], ["miscLine", "Other"]] },
 	{ label: "Extras", rows: [["glasses", "Glasses"], ["accessories", "Headwear"]] },
 ];
 
@@ -275,134 +295,6 @@ const setPath = (face, path, value) => {
 let partIndex = 0;
 let thumbJob = 0;
 
-const startEditing = () => {
-	edited = structuredClone(current.face);
-	$("note").value = "";
-	$("sent").textContent = "";
-	renderPart();
-	drawViewer();
-};
-
-const change = (path, value) => {
-	setPath(edited, path, value);
-	drawViewer();
-	renderPart();
-};
-
-const renderParts = () => {
-	const list = $("parts");
-	list.innerHTML = "";
-	for (const [i, part] of PARTS.entries()) {
-		const li = document.createElement("li");
-		li.className = "nav-item";
-		const a = document.createElement("a");
-		a.href = "#";
-		a.className = `nav-link${i === partIndex ? " active" : ""}`;
-		a.textContent = part.label;
-		a.onclick = (event) => {
-			event.preventDefault();
-			partIndex = i;
-			renderParts();
-			renderPart();
-		};
-		li.append(a);
-		list.append(li);
-	}
-};
-
-// Thumbnails are drawn a few at a time so the page never locks up
-const drawThumbs = (jobs) => {
-	const job = ++thumbJob;
-	let i = 0;
-	const step = () => {
-		if (job !== thumbJob) {
-			return;
-		}
-		for (const end = Math.min(i + 8, jobs.length); i < end; i++) {
-			const [el, face] = jobs[i];
-			el.innerHTML = faceSvg(current, face);
-		}
-		if (i < jobs.length) {
-			requestAnimationFrame(step);
-		}
-	};
-	step();
-};
-
-const renderPart = () => {
-	const part = PARTS[partIndex];
-	const box = $("part");
-	box.innerHTML = "";
-	const jobs = [];
-	for (const [feature, label] of part.rows) {
-		if (label) {
-			const h = document.createElement("div");
-			h.className = "row-label";
-			h.textContent = label;
-			box.append(h);
-		}
-		const grid = document.createElement("div");
-		grid.className = "options";
-		const now = edited[feature]?.id;
-		for (const id of options[feature]) {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.className = `option${id === now ? " selected" : ""}`;
-			button.title = id;
-			button.onclick = () => change(`${feature}.id`, id);
-			const face = structuredClone(edited);
-			setPath(face, `${feature}.id`, id);
-			jobs.push([button, face]);
-			grid.append(button);
-		}
-		box.append(grid);
-	}
-	for (const [path, label, min, max, stepSize] of part.sliders ?? []) {
-		const row = document.createElement("label");
-		row.className = "slider";
-		row.textContent = label;
-		const input = document.createElement("input");
-		input.type = "range";
-		input.className = "form-range";
-		Object.assign(input, { min, max, step: stepSize, value: getPath(edited, path) ?? min });
-		input.oninput = () => {
-			setPath(edited, path, Number(input.value));
-			drawViewer();
-		};
-		input.onchange = () => renderPart();
-		row.append(input);
-		box.append(row);
-	}
-	if (part.colors) {
-		const [path, swatches] = part.colors;
-		const row = document.createElement("div");
-		row.className = "swatches";
-		const now = String(getPath(edited, path)).toLowerCase();
-		for (const color of swatches) {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.className = `swatch${color.toLowerCase() === now ? " selected" : ""}`;
-			button.style.background = color;
-			button.title = color;
-			button.onclick = () => change(path, color);
-			row.append(button);
-		}
-		const custom = document.createElement("input");
-		custom.type = "color";
-		custom.className = "form-control form-control-color";
-		custom.value = /^#[\da-f]{6}$/i.test(now) ? now : "#000000";
-		custom.title = "Other color";
-		custom.oninput = () => {
-			setPath(edited, path, custom.value);
-			drawViewer();
-		};
-		custom.onchange = () => renderPart();
-		row.append(custom);
-		box.append(row);
-	}
-	drawThumbs(jobs);
-};
-
 const flatten = (o, prefix = "", out = {}) => {
 	for (const [k, v] of Object.entries(o)) {
 		if (v && typeof v === "object" && !Array.isArray(v)) {
@@ -421,27 +313,178 @@ const changes = () => {
 		.map((k) => `${k}: ${a[k]} -> ${b[k]}`);
 };
 
-$("request-toggle").hidden = !FORM;
-$("request-toggle").onclick = (event) => {
-	event.preventDefault();
-	const box = $("request");
-	box.hidden = !box.hidden;
-	if (box.hidden) {
+// Send only once there's something to send
+const updateSend = () => {
+	$("send").disabled = changes().length === 0 && $("note").value.trim() === "";
+};
+
+const startEditing = () => {
+	edited = structuredClone(current.face);
+	$("note").value = "";
+	$("sent").textContent = "";
+	renderPart();
+	drawViewer();
+	updateSend();
+};
+
+const change = (path, value) => {
+	setPath(edited, path, value);
+	$("sent").textContent = "";
+	drawViewer();
+	renderPart();
+	updateSend();
+};
+
+const renderParts = () => {
+	const list = $("parts");
+	list.innerHTML = "";
+	for (const [i, part] of PARTS.entries()) {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = i === partIndex ? "active" : "";
+		button.textContent = part.label;
+		button.onclick = () => {
+			partIndex = i;
+			renderParts();
+			renderPart();
+		};
+		list.append(button);
+	}
+};
+
+const cropped = (face, [x, y, w, h]) =>
+	faceSvg(current, face)
+		.replace(/viewBox="[^"]*"/, `viewBox="${x} ${y} ${w} ${h}"`)
+		.replace(/preserveAspectRatio="[^"]*"/, 'preserveAspectRatio="xMidYMid meet"');
+
+// Thumbnails are drawn a few at a time so the page never locks up
+const drawThumbs = (jobs) => {
+	const job = ++thumbJob;
+	let i = 0;
+	const step = () => {
+		if (job !== thumbJob) {
+			return;
+		}
+		for (const end = Math.min(i + 8, jobs.length); i < end; i++) {
+			const [el, face, crop] = jobs[i];
+			el.innerHTML = cropped(face, crop);
+		}
+		if (i < jobs.length) {
+			requestAnimationFrame(step);
+		}
+	};
+	step();
+};
+
+const label = (text) => {
+	const h = document.createElement("div");
+	h.className = "row-label";
+	h.textContent = text;
+	return h;
+};
+
+const renderPart = () => {
+	const part = PARTS[partIndex];
+	const box = $("part");
+	box.innerHTML = "";
+	const jobs = [];
+	for (const [feature, text] of part.rows) {
+		if (text) {
+			box.append(label(text));
+		}
+		const grid = document.createElement("div");
+		grid.className = "options";
+		const now = edited[feature]?.id;
+		const was = current.face[feature]?.id;
+		const crop = CROPS[feature];
+		for (const id of options[feature]) {
+			const button = document.createElement("button");
+			button.type = "button";
+			// The player's own option keeps a dot, so it's easy to go back to
+			button.className = `option${id === now ? " selected" : ""}${id === was ? " original" : ""}`;
+			button.style.aspectRatio = `${crop[2]} / ${crop[3]}`;
+			button.title = id === was ? `${id} (current)` : id;
+			button.onclick = () => change(`${feature}.id`, id);
+			const face = structuredClone(edited);
+			setPath(face, `${feature}.id`, id);
+			jobs.push([button, face, crop]);
+			grid.append(button);
+		}
+		box.append(grid);
+	}
+	for (const [path, text, min, max, stepSize] of part.sliders ?? []) {
+		const row = document.createElement("label");
+		row.className = "slider";
+		const name = document.createElement("span");
+		name.textContent = text;
+		const input = document.createElement("input");
+		input.type = "range";
+		input.className = "form-range";
+		Object.assign(input, { min, max, step: stepSize, value: getPath(edited, path) ?? min });
+		input.oninput = () => {
+			setPath(edited, path, Number(input.value));
+			drawViewer();
+			updateSend();
+		};
+		input.onchange = () => renderPart();
+		row.append(name, input);
+		box.append(row);
+	}
+	if (part.colors) {
+		const [path, swatches, text] = part.colors;
+		box.append(label(text));
+		const row = document.createElement("div");
+		row.className = "swatches";
+		const now = String(getPath(edited, path)).toLowerCase();
+		for (const color of swatches) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = `swatch${color.toLowerCase() === now ? " selected" : ""}`;
+			button.style.background = color;
+			button.title = color;
+			button.onclick = () => change(path, color);
+			row.append(button);
+		}
+		const custom = document.createElement("input");
+		custom.type = "color";
+		custom.className = "form-control form-control-color";
+		custom.value = /^#[\da-f]{6}$/i.test(now) ? now : "#000000";
+		custom.title = "Pick any color";
+		custom.oninput = () => {
+			setPath(edited, path, custom.value);
+			drawViewer();
+			updateSend();
+		};
+		custom.onchange = () => renderPart();
+		row.append(custom);
+		box.append(row);
+	}
+	drawThumbs(jobs);
+};
+
+const openEditor = (open) => {
+	$("request").hidden = !open;
+	$("request-toggle").setAttribute("aria-expanded", String(open));
+	if (open) {
+		renderParts();
+		startEditing();
+		$("request").scrollIntoView({ behavior: "smooth", block: "nearest" });
+	} else {
 		edited = undefined;
 		thumbJob++;
 		drawViewer();
-	} else {
-		renderParts();
-		startEditing();
-		drawViewer();
 	}
 };
+
+$("request-row").hidden = !FORM;
+$("request-toggle").onclick = () => openEditor($("request").hidden);
+$("request-close").onclick = () => openEditor(false);
 $("reset").onclick = startEditing;
+$("note").oninput = updateSend;
 $("send").onclick = async () => {
 	const list = changes();
 	const note = $("note").value.trim();
 	if (list.length === 0 && !note) {
-		$("sent").textContent = "Change the face or add a note first";
 		return;
 	}
 	const body = new URLSearchParams({
@@ -451,16 +494,41 @@ $("send").onclick = async () => {
 		[FORM.note]: note,
 	});
 	$("send").disabled = true;
+	$("sent").className = "text-body-secondary";
 	$("sent").textContent = "Sending...";
 	try {
 		// Google Forms doesn't allow reading the reply, so a sent request is taken as received
 		await fetch(FORM.url, { method: "POST", mode: "no-cors", body });
-		$("sent").textContent = "Sent, thanks";
+		startEditing();
+		$("sent").className = "text-success";
+		$("sent").textContent = "Sent. Thanks!";
 	} catch {
-		$("sent").textContent = "Couldn't send, try again";
+		$("sent").className = "text-danger";
+		$("sent").textContent = "Couldn't send. Try again?";
+		updateSend();
 	}
-	$("send").disabled = false;
 };
+
+// The note beside the request button
+$("info-text").textContent = `${players.length.toLocaleString()} faces is a ton to get right, so please send suggested edits here, no matter how nitpicky. I'd love to get as many of these faces as accurate as possible. Thanks!`;
+const showInfo = (show) => {
+	$("info-pop").hidden = !show;
+	$("info").setAttribute("aria-expanded", String(show));
+};
+$("info").onclick = (event) => {
+	event.stopPropagation();
+	showInfo($("info-pop").hidden);
+};
+document.addEventListener("click", (event) => {
+	if (!$("info-pop").hidden && !$("info-pop").contains(event.target)) {
+		showInfo(false);
+	}
+});
+document.addEventListener("keydown", (event) => {
+	if (event.key === "Escape") {
+		showInfo(false);
+	}
+});
 
 // Worker console code
 const applyCode = `const players = bbgm.idb.merged
@@ -483,7 +551,8 @@ for (const p of players) {
 await bbgm.toUI("realtimeUpdate", [["playerMovement"]]);
 console.log(\`Updated \${count} players\`);`;
 
-// Real team names, logos and colors, from u/alexnoob's team file. It is the
+// Real team names, logos and colors, from u/alexnoob's team file, plus each
+// team's real jersey style from this site's jerseys.json. The team file is the
 // same JSON that goes in BBGM's Global Settings > Team Info; this applies it to
 // the open league, every past season included, and saves it there too so new
 // leagues and future relocations use it.
@@ -491,6 +560,16 @@ const TEAM_FILE = "https://raw.githubusercontent.com/alexnoob/BasketBall-GM-Rost
 const teamCode = `
 // Real team names and logos, from u/alexnoob: https://github.com/alexnoob/BasketBall-GM-Rosters
 const teamInfo = await (await fetch("${TEAM_FILE}")).json();
+// With each team's real jersey style, by era, from BBGM Real Faces
+for (const [srID, { jersey, seasons }] of Object.entries(await (await fetch("${SITE}jerseys.json")).json())) {
+	const info = teamInfo[srID];
+	if (info) {
+		info.jersey = jersey;
+		for (const [season, style] of Object.entries(seasons ?? {})) {
+			info.seasons = { ...info.seasons, [season]: { ...info.seasons?.[season], jersey: style } };
+		}
+	}
+}
 const KEYS = ["abbrev", "region", "name", "pop", "colors", "jersey", "imgURL", "imgURLSmall"];
 const applyInfo = (t, season, srID) => {
 	const root = teamInfo[srID];

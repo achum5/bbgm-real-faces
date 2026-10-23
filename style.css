@@ -21,28 +21,6 @@ h3 { font-size: 16px; }
 .navbar-brand {
 	font-size: 1.1rem;
 }
-[data-bs-theme="dark"] body {
-	background-color: #212529;
-	color: #f8f9fa;
-}
-[data-bs-theme="dark"] .navbar-border {
-	border-bottom-color: #495057;
-}
-[data-bs-theme="dark"] a {
-	color: #fd9a47;
-}
-[data-bs-theme="dark"] .btn-primary {
-	--bs-btn-bg: #fd9a47;
-	--bs-btn-border-color: #fd9a47;
-	--bs-btn-color: #000;
-	--bs-btn-hover-bg: #fd7e14;
-	--bs-btn-hover-border-color: #fd7e14;
-	--bs-btn-hover-color: #000;
-	--bs-btn-disabled-bg: #fd9a47;
-	--bs-btn-disabled-border-color: #fd9a47;
-	--bs-btn-disabled-color: #000;
-}
-
 .year {
 	width: 5.5em;
 }
@@ -100,7 +78,6 @@ h3 { font-size: 16px; }
 	height: 75px;
 	object-fit: cover;
 	object-position: top;
-	border-radius: 3px;
 	background: var(--bs-secondary-bg);
 }
 .pair .face {
@@ -126,7 +103,6 @@ h3 { font-size: 16px; }
 	aspect-ratio: 4 / 5;
 	object-fit: cover;
 	object-position: top;
-	border-radius: 4px;
 	background: var(--bs-secondary-bg);
 }
 .viewer .face {
@@ -163,7 +139,7 @@ h3 { font-size: 16px; }
 	color: inherit;
 	background: transparent;
 	border: 1px solid transparent;
-	border-radius: var(--bs-border-radius);
+	border-radius: 0;
 }
 /* A faint magnifying glass and dotted underline say the name can be searched */
 .picker::after {
@@ -214,7 +190,7 @@ h3 { font-size: 16px; }
 	min-width: 260px;
 	max-height: 360px;
 	overflow-y: auto;
-	box-shadow: var(--bs-box-shadow);
+	--bs-list-group-border-radius: 0;
 }
 .matches .list-group-item {
 	padding: 4px 8px;
@@ -227,30 +203,93 @@ h3 { font-size: 16px; }
 }
 
 /* Change requests */
-.parts .nav-link {
-	padding: 2px 8px;
+.request-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.info-btn {
+	padding: 0 2px;
+	border: 0;
+	background: none;
+	color: var(--bs-link-color);
+	font-size: 18px;
+	line-height: 1;
+}
+.info-pop {
+	position: absolute;
+	z-index: 20;
+	top: calc(100% + 6px);
+	left: 0;
+	width: min(320px, 100%);
+	padding: 8px 10px;
+	border: 1px solid var(--bs-border-color);
+	background: var(--bs-body-bg);
+}
+.editor {
+	padding: 10px;
+	border: 1px solid var(--bs-border-color);
+}
+/* Plain text tabs, on one line that scrolls sideways on narrow screens */
+.parts {
+	display: flex;
+	gap: 14px;
+	overflow-x: auto;
+	white-space: nowrap;
+	scrollbar-width: none;
+	border-bottom: 1px solid var(--bs-border-color);
+	padding-bottom: 4px;
+}
+.parts::-webkit-scrollbar {
+	display: none;
+}
+.parts button {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--bs-link-color);
+}
+.parts button.active {
+	color: var(--bs-body-color);
+	font-weight: 700;
 }
 .row-label {
-	margin-top: 6px;
-	font-weight: 500;
+	margin: 8px 0 4px;
+	font-weight: 700;
 }
 .options {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 4px;
-	max-height: 260px;
+	max-height: 232px;
 	overflow-y: auto;
 }
 .option {
-	width: 52px;
-	height: 78px;
+	position: relative;
+	height: 64px;
 	padding: 0;
-	border: 2px solid transparent;
-	border-radius: 4px;
-	background: var(--bs-secondary-bg);
+	overflow: hidden;
+	border: 1px solid var(--bs-border-color);
+	border-radius: 0;
+	background: #fff;
+}
+.option:hover {
+	border-color: var(--bs-secondary-color);
 }
 .option.selected {
-	border-color: var(--bs-primary);
+	outline: 2px solid var(--bs-primary);
+	outline-offset: -2px;
+}
+/* The player's own option */
+.option.original::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 6px;
+	height: 6px;
+	background: var(--bs-primary);
 }
 .option svg {
 	display: block;
@@ -260,9 +299,13 @@ h3 { font-size: 16px; }
 .slider {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	max-width: 320px;
-	margin-top: 6px;
+	gap: 10px;
+	max-width: 340px;
+	margin-top: 8px;
+}
+.slider span {
+	width: 56px;
+	font-weight: 700;
 }
 .slider .form-range {
 	flex: 1;
@@ -272,21 +315,21 @@ h3 { font-size: 16px; }
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 4px;
-	margin-top: 6px;
 }
 .swatch {
 	width: 24px;
 	height: 24px;
 	padding: 0;
-	border: 2px solid var(--bs-border-color);
-	border-radius: 50%;
+	border: 1px solid var(--bs-border-color);
+	border-radius: 0;
 }
 .swatch.selected {
-	border-color: var(--bs-primary);
-	box-shadow: 0 0 0 2px var(--bs-primary);
+	outline: 2px solid var(--bs-primary);
+	outline-offset: 1px;
 }
 .swatches .form-control-color {
-	width: 32px;
-	height: 28px;
+	width: 34px;
+	height: 26px;
 	padding: 2px;
+	border-radius: 0;
 }
