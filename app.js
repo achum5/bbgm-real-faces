@@ -2,8 +2,14 @@ import { display } from "./faces.js";
 
 const SITE = new URL(".", location.href).href;
 
-// Change requests are posted to a Google Form; null hides the button
-const FORM = null;
+// Change requests are posted to a Google Form
+const FORM = {
+	url: "https://docs.google.com/forms/d/e/1FAIpQLSd78TKi7-8WDPpdiCzwRtrMmOpcECZh5LCPHbZ9iRK2W3CWbw/formResponse",
+	player: "entry.853634109",
+	change: "entry.1002594022",
+	face: "entry.823317504",
+	note: "entry.1810661261",
+};
 
 const SKINS = ["#f2d0b8", "#ecc8b3", "#e3bda5", "#ddb7a0", "#d9a886", "#cc9a78", "#c49070", "#bb876f", "#b07a5f", "#a67358", "#9b6a50", "#8d5d45", "#80523e", "#7a4a36", "#6e4030", "#673a2a", "#5a3626", "#4a2c20"];
 const HAIR_COLORS = ["#0f0902", "#1c1008", "#272421", "#3D2314", "#5A3825", "#7a5230", "#9a6a40", "#b8925a", "#c8a878", "#d8c8a0", "#b0602e", "#8c8c8c", "#d9d9d9"];
