@@ -23,6 +23,11 @@ const store = {
 	},
 };
 
+// Copying from a chat or a note can bring invisible characters along, which
+// fetch refuses in a header. A GitHub token is only letters, digits and _.
+const token = () => store.get("review-token").replace(/[^\w]/g, "");
+const csvLink = () => store.get("review-csv").replace(/[\s\u200b-\u200d\u2060\ufeff]/g, "");
+
 // Every value a face can hold. Requests come from anyone, and an accepted
 // face ends up in people's leagues, so nothing outside this goes through.
 const [allowed, options] = await Promise.all(["allowed.json", "options.json"].map(async (f) => (await fetch(f)).json()));
@@ -130,7 +135,7 @@ const api = async (path, { method = "GET", body, raw } = {}) => {
 		method,
 		cache: "no-store",
 		headers: {
-			Authorization: `Bearer ${store.get("review-token")}`,
+			Authorization: `Bearer ${token()}`,
 			Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
 			"X-GitHub-Api-Version": "2022-11-28",
 			...(body ? { "Content-Type": "application/json" } : {}),
@@ -187,7 +192,7 @@ const applySet = (face, set) => {
 };
 
 const loadPlayers = async () => {
-	if (store.get("review-token")) {
+	if (token()) {
 		const ref = (await api(`/git/ref/heads/${BRANCH}`)).object.sha;
 		rows = JSON.parse(await readFile("players.json", ref));
 		reviewed = JSON.parse((await readFile("reviewed.json", ref)) ?? "{}");
@@ -198,7 +203,7 @@ const loadPlayers = async () => {
 };
 
 const loadRequests = async () => {
-	const res = await fetch(store.get("review-csv"), { cache: "no-store" });
+	const res = await fetch(csvLink(), { cache: "no-store" });
 	if (!res.ok) {
 		throw new Error(`The sheet said ${res.status}`);
 	}
@@ -477,8 +482,8 @@ $("publish").onclick = async () => {
 // Settings
 const showSettings = (show) => {
 	$("settings").hidden = !show;
-	$("csv").value = store.get("review-csv");
-	$("token").value = store.get("review-token");
+	$("csv").value = csvLink();
+	$("token").value = token();
 };
 $("settings-toggle").onclick = (event) => {
 	event.preventDefault();
@@ -486,13 +491,13 @@ $("settings-toggle").onclick = (event) => {
 };
 $("settings").onsubmit = (event) => {
 	event.preventDefault();
-	store.set("review-csv", $("csv").value.trim());
-	store.set("review-token", $("token").value.trim());
+	store.set("review-csv", $("csv").value.replace(/[\s\u200b-\u200d\u2060\ufeff]/g, ""));
+	store.set("review-token", $("token").value.replace(/[^\w]/g, ""));
 	location.reload();
 };
 
 const start = async () => {
-	if (!store.get("review-csv") || !store.get("review-token")) {
+	if (!csvLink() || !token()) {
 		showSettings(true);
 		$("status").textContent = "Add the two links to start";
 		return;
