@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>BBGM Real Faces</title>
+<script>
+if (matchMedia("(prefers-color-scheme: dark)").matches) {
+	document.documentElement.dataset.bsTheme = "dark";
+}
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="navbar navbar-border">
+	<div class="container">
+		<a class="navbar-brand fw-bold" href="./">BBGM Real Faces</a>
+		<div class="d-flex gap-3">
+			<a href="https://play.basketball-gm.com/">Play BBGM</a>
+			<a href="https://github.com/achum5/bbgm-real-faces">GitHub</a>
+		</div>
+	</div>
+</nav>
+
+<div class="ticker" id="ticker"><div class="ticker-track" id="ticker-track"></div></div>
+
+<div class="container my-3">
+	<div class="row g-4">
+		<div class="col-lg-7">
+			<h2>Add to your league</h2>
+			<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+				<label for="from">Draft classes</label>
+				<input type="number" class="form-control form-control-sm year" id="from" min="1946" max="2030" value="1946">
+				<span>to</span>
+				<input type="number" class="form-control form-control-sm year" id="to" min="1946" max="2030" value="2030">
+				<span class="text-body-secondary" id="count"></span>
+			</div>
+			<div class="form-check mb-2">
+				<input class="form-check-input" type="checkbox" id="keep-photos">
+				<label class="form-check-label" for="keep-photos">Keep BBGM's own photos</label>
+			</div>
+			<button class="btn btn-primary" id="copy" disabled>Copy code</button>
+			<a href="#" class="ms-2" id="batch-toggle">Paste in batches</a>
+			<p class="text-body-secondary mt-2 mb-2">Turn on God Mode, then paste in Tools &gt; Danger Zone &gt; Worker console and click Run code. Run it again later to catch new draft classes.</p>
+			<div id="batches" class="mb-2" hidden></div>
+			<details class="mb-3">
+				<summary>Code</summary>
+				<pre class="code" id="code"></pre>
+			</details>
+
+			<h2>Downloads</h2>
+			<ul>
+				<li><a href="real-faces-2027-preseason.json.gz">League file, 2027 preseason</a></li>
+				<li><a href="players.json">players.json</a></li>
+			</ul>
+		</div>
+
+		<div class="col-lg-5">
+			<div class="d-flex align-items-baseline gap-2">
+				<h2 class="mb-2" id="viewer-name"></h2>
+				<span class="text-body-secondary" id="viewer-year"></span>
+			</div>
+			<div class="viewer">
+				<img id="viewer-photo" alt="" referrerpolicy="no-referrer">
+				<div class="face" id="viewer-face"></div>
+			</div>
+			<button class="btn btn-light border mt-2" id="random">Random player</button>
+		</div>
+	</div>
+
+	<h2 class="mt-4">Players</h2>
+	<input type="search" class="form-control form-control-sm search mb-2" id="search" placeholder="Search" autocomplete="off">
+	<div class="results" id="results"></div>
+
+	<h2 class="mt-4">By decade</h2>
+	<div id="decades"></div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
