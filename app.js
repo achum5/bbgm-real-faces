@@ -560,7 +560,7 @@ const TEAM_FILE = "https://raw.githubusercontent.com/alexnoob/BasketBall-GM-Rost
 const teamCode = `
 // Real team names and logos, from u/alexnoob: https://github.com/alexnoob/BasketBall-GM-Rosters
 const teamInfo = await (await fetch("${TEAM_FILE}")).json();
-// With each team's real jersey style, by era, from BBGM Real Faces
+// With each team's real jersey style, by era, from BBGM Real Cartoon Faces
 for (const [srID, { jersey, seasons }] of Object.entries(await (await fetch("${SITE}jerseys.json")).json())) {
 	const info = teamInfo[srID];
 	if (info) {
@@ -638,7 +638,7 @@ const godCode = (achievements) => `
 await bbgm.league.setGameAttributes({ godMode: false${achievements ? ", godModeInPast: false" : ""} });
 console.log("God Mode is off${achievements ? " and achievements are allowed" : ""}");`;
 
-const buildCode = () => `// BBGM Real Faces
+const buildCode = () => `// BBGM Real Cartoon Faces
 const response = await fetch("${SITE}players.json");
 const faces = new Map();
 for (const [id, , , , face] of await response.json()) {

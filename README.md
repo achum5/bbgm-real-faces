@@ -1,4 +1,4 @@
-# BBGM Real Faces
+# BBGM Real Cartoon Faces
 
 Hand-picked faces for every real player in [Basketball GM](https://play.basketball-gm.com/), 1946 to 2030.
 
