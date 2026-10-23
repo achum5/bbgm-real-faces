@@ -31,10 +31,21 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 				<button class="btn btn-primary text-nowrap" id="copy">Copy faces</button>
 				<span>&rarr; With God Mode on, paste in the Worker Console on your league's Danger Zone page at <a href="https://play.basketball-gm.com/">BBGM</a></span>
 			</div>
-			<div class="form-check mb-3">
-				<input class="form-check-input" type="checkbox" id="teams">
-				<label class="form-check-label" for="teams">Also use real team names and logos, from <a href="https://www.reddit.com/r/BasketballGM/s/Pc0lHWNXlE">u/alexnoob</a></label>
-			</div>
+			<details class="mb-3 more">
+				<summary>More options</summary>
+				<div class="form-check mt-1">
+					<input class="form-check-input" type="checkbox" id="teams">
+					<label class="form-check-label" for="teams">Also use real team names and logos, from <a href="https://www.reddit.com/r/BasketballGM/s/Pc0lHWNXlE">u/alexnoob</a></label>
+				</div>
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" id="god-off">
+					<label class="form-check-label" for="god-off">Turn God Mode off when done</label>
+				</div>
+				<div class="form-check ms-4">
+					<input class="form-check-input" type="checkbox" id="achievements">
+					<label class="form-check-label" for="achievements">Also allow achievements again</label>
+				</div>
+			</details>
 
 			<h2>Downloads</h2>
 			<ul>

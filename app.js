@@ -553,13 +553,31 @@ await bbgm.idb.meta.put("attributes", teamInfo, "realTeamInfo");
 await bbgm.toUI("realtimeUpdate", [["team"]]);
 console.log(\`Updated \${teamCount} teams\`);`;
 
-const buildCode = (withTeams) => `// BBGM Real Faces
+// Turning God Mode off leaves the league marked as having used it, which is
+// what keeps achievements off; clearing that mark too lets them count again
+const godCode = (achievements) => `
+await bbgm.league.setGameAttributes({ godMode: false${achievements ? ", godModeInPast: false" : ""} });
+console.log("God Mode is off${achievements ? " and achievements are allowed" : ""}");`;
+
+const buildCode = () => `// BBGM Real Faces
 const response = await fetch("${SITE}players.json");
 const faces = new Map();
 for (const [id, , , , face] of await response.json()) {
 	faces.set(id, face);
 }
-${applyCode}${withTeams ? teamCode : ""}`;
+${applyCode}${$("teams").checked ? teamCode : ""}${$("god-off").checked ? godCode($("achievements").checked) : ""}`;
+
+// Allowing achievements means God Mode has to go off too
+$("achievements").onchange = () => {
+	if ($("achievements").checked) {
+		$("god-off").checked = true;
+	}
+};
+$("god-off").onchange = () => {
+	if (!$("god-off").checked) {
+		$("achievements").checked = false;
+	}
+};
 
 const copyText = async (text, button) => {
 	try {
@@ -579,4 +597,4 @@ const copyText = async (text, button) => {
 	}, 1500);
 };
 
-$("copy").onclick = () => copyText(buildCode($("teams").checked), $("copy"));
+$("copy").onclick = () => copyText(buildCode(), $("copy"));
