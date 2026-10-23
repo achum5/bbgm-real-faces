@@ -99,14 +99,21 @@ icon.href = `data:image/svg+xml,${encodeURIComponent(
 )}`;
 document.head.append(icon);
 
-// Ticker
+// Ticker: scrolls by itself, and can be grabbed and flicked either way like
+// any scrolling strip. It holds three copies of the players and stays in the
+// middle one, so there's always more in both directions.
+const COPIES = 3;
+const SPEED = 70; // px per second
 const tickerPlayers = shuffle(known).slice(0, 40);
+const ticker = $("ticker");
 const track = $("ticker-track");
-for (let copy = 0; copy < 2; copy++) {
+for (let copy = 0; copy < COPIES; copy++) {
 	for (const p of tickerPlayers) {
 		const div = pairEl(p);
-		// A photo that won't load takes its whole pair with it, in both copies
-		div.querySelector("img").onerror = () => {
+		const img = div.querySelector("img");
+		img.draggable = false;
+		// A photo that won't load takes its whole pair with it, in every copy
+		img.onerror = () => {
 			for (const el of track.querySelectorAll(`[data-id="${p.id}"]`)) {
 				el.remove();
 			}
@@ -115,7 +122,132 @@ for (let copy = 0; copy < 2; copy++) {
 		track.append(div);
 	}
 }
-track.style.setProperty("--ticker-duration", `${tickerPlayers.length * 3}s`);
+
+let copyWidth = 0;
+let pos = 0;
+let lastTouched = -Infinity;
+let hovering = false;
+let drag;
+let dragJustEnded = false;
+let glide = 0;
+
+const measureTicker = () => {
+	const share = copyWidth > 0 ? pos / copyWidth : 1;
+	copyWidth = track.scrollWidth / COPIES;
+	pos = share * copyWidth;
+	ticker.scrollLeft = pos;
+};
+new ResizeObserver(measureTicker).observe(track);
+
+// Back into the middle copy, which looks the same, so the jump can't be seen
+const recenter = () => {
+	if (copyWidth > 0) {
+		while (pos < copyWidth * 0.5) {
+			pos += copyWidth;
+		}
+		while (pos > copyWidth * 1.5) {
+			pos -= copyWidth;
+		}
+		ticker.scrollLeft = pos;
+	}
+};
+
+// Any scroll that isn't the ticker's own is the user's
+ticker.addEventListener(
+	"scroll",
+	() => {
+		if (Math.abs(ticker.scrollLeft - pos) > 2) {
+			pos = ticker.scrollLeft;
+			lastTouched = performance.now();
+		}
+	},
+	{ passive: true },
+);
+ticker.addEventListener("touchstart", () => {
+	lastTouched = Infinity;
+}, { passive: true });
+ticker.addEventListener("touchend", () => {
+	lastTouched = performance.now();
+}, { passive: true });
+// Only a real mouse pauses it by hovering; phones fake hovers on every tap
+ticker.addEventListener("pointerenter", (event) => {
+	hovering = event.pointerType === "mouse";
+});
+ticker.addEventListener("pointerleave", () => {
+	hovering = false;
+});
+
+// With a mouse, drag it and let go to send it gliding
+ticker.addEventListener("pointerdown", (event) => {
+	if (event.pointerType !== "mouse" || event.button !== 0) {
+		return;
+	}
+	drag = { x: event.clientX, start: pos, moved: false, v: 0, t: event.timeStamp, lastX: event.clientX };
+	glide = 0;
+});
+window.addEventListener("pointermove", (event) => {
+	if (!drag) {
+		return;
+	}
+	const dx = event.clientX - drag.x;
+	if (Math.abs(dx) > 5 && !drag.moved) {
+		drag.moved = true;
+		ticker.classList.add("dragging");
+	}
+	if (drag.moved) {
+		const dt = Math.max(event.timeStamp - drag.t, 1);
+		drag.v = (event.clientX - drag.lastX) / dt;
+		drag.t = event.timeStamp;
+		drag.lastX = event.clientX;
+		pos = drag.start - dx;
+		ticker.scrollLeft = pos;
+		lastTouched = performance.now();
+	}
+});
+ticker.addEventListener(
+	"click",
+	(event) => {
+		if (dragJustEnded) {
+			event.stopPropagation();
+		}
+	},
+	{ capture: true },
+);
+window.addEventListener("pointerup", () => {
+	if (!drag) {
+		return;
+	}
+	if (drag.moved) {
+		glide = -drag.v;
+		// The click that ends a drag, if the browser sends one, shouldn't open a player
+		dragJustEnded = true;
+		setTimeout(() => {
+			dragJustEnded = false;
+		}, 0);
+	}
+	ticker.classList.remove("dragging");
+	drag = undefined;
+});
+
+let lastFrame = performance.now();
+const tick = (now) => {
+	const ms = Math.min(now - lastFrame, 100);
+	lastFrame = now;
+	if (glide !== 0) {
+		pos += glide * ms;
+		ticker.scrollLeft = pos;
+		glide *= 0.95 ** (ms / 16);
+		lastTouched = now;
+		if (Math.abs(glide) < 0.02) {
+			glide = 0;
+		}
+	} else if (!drag && !hovering && now - lastTouched > 1500 && copyWidth > 0) {
+		pos += (SPEED * ms) / 1000;
+		recenter();
+	}
+	requestAnimationFrame(tick);
+};
+requestAnimationFrame(tick);
 
 // Viewer
 let current;

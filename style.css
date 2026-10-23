@@ -41,31 +41,30 @@ h3 { font-size: 16px; }
 
 /* Ticker */
 .ticker {
-	overflow: hidden;
+	overflow-x: auto;
+	overflow-y: hidden;
+	overscroll-behavior-x: contain;
+	scrollbar-width: none;
 	border-bottom: 1px solid var(--bs-border-color);
 	padding: 8px 0;
+	cursor: grab;
+	user-select: none;
+	-webkit-user-select: none;
+}
+.ticker::-webkit-scrollbar {
+	display: none;
+}
+.ticker.dragging,
+.ticker.dragging .pair {
+	cursor: grabbing;
 }
 .ticker-track {
 	display: flex;
 	gap: 18px;
 	width: max-content;
-	animation: ticker var(--ticker-duration, 120s) linear infinite;
 }
-.ticker:hover .ticker-track {
-	animation-play-state: paused;
-}
-@keyframes ticker {
-	to {
-		transform: translateX(-50%);
-	}
-}
-@media (prefers-reduced-motion: reduce) {
-	.ticker {
-		overflow-x: auto;
-	}
-	.ticker-track {
-		animation: none;
-	}
+.ticker img {
+	-webkit-user-drag: none;
 }
 .pair {
 	display: flex;
