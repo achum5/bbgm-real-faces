@@ -17,10 +17,7 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 <nav class="navbar navbar-border">
 	<div class="container">
 		<a class="navbar-brand fw-bold" href="./">BBGM Real Faces</a>
-		<div class="d-flex gap-3">
-			<a href="https://play.basketball-gm.com/">Play BBGM</a>
-			<a href="https://github.com/achum5/bbgm-real-faces">GitHub</a>
-		</div>
+		<a href="https://play.basketball-gm.com/">Play BBGM</a>
 	</div>
 </nav>
 
@@ -30,15 +27,8 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 	<div class="row g-4">
 		<div class="col-lg-8">
 			<h2>Add to your league</h2>
-			<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
-				<label for="from">Draft classes</label>
-				<input type="number" class="form-control form-control-sm year" id="from" min="1946" max="2030" value="1946">
-				<span>to</span>
-				<input type="number" class="form-control form-control-sm year" id="to" min="1946" max="2030" value="2030">
-				<span class="text-body-secondary" id="count"></span>
-			</div>
 			<div class="d-flex align-items-center gap-2 mb-3">
-				<button class="btn btn-primary text-nowrap" id="copy" disabled>Copy faces</button>
+				<button class="btn btn-primary text-nowrap" id="copy">Copy faces</button>
 				<span>&rarr; With God Mode on, paste in the Worker Console on your league's Danger Zone page at <a href="https://play.basketball-gm.com/">BBGM</a></span>
 			</div>
 

@@ -1,19 +1,6 @@
 import { display } from "./faces.js";
 
 const SITE = new URL(".", location.href).href;
-const MIN_YEAR = 1946;
-const MAX_YEAR = 2030;
-
-const COLORS = [
-	["#89bfd3", "#7a1319", "#07364f"],
-	["#1d428a", "#ffc72c", "#ffffff"],
-	["#007a33", "#ffffff", "#ba9653"],
-	["#552583", "#fdb927", "#000000"],
-	["#ce1141", "#000000", "#ffffff"],
-	["#0e2240", "#fec524", "#8b2131"],
-	["#00788c", "#1d1160", "#a1a1a4"],
-	["#98002e", "#f9a01b", "#000000"],
-];
 
 const $ = (id) => document.getElementById(id);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
@@ -32,13 +19,14 @@ const plain = (s) =>
 		.toLowerCase();
 
 const res = await fetch("players.json");
-const players = (await res.json()).map(([id, name, year, photo, face, score]) => ({
+const players = (await res.json()).map(([id, name, year, photo, face, score, uniform]) => ({
 	id,
 	name,
 	year,
 	photo,
 	face,
 	score,
+	uniform,
 	search: plain(name),
 }));
 const withPhoto = players.filter((p) => p.photo);
@@ -51,18 +39,19 @@ const studio = document.createElement("div");
 studio.style.cssText = "position:absolute;left:-10000px;top:0;width:400px;height:600px";
 document.body.append(studio);
 
-const faceSvg = (p, colors = pick(COLORS)) => {
+// Each player wears his team's jersey from the 2027 league file
+const faceSvg = (p) => {
 	studio.innerHTML = "";
 	display(studio, {
 		...structuredClone(p.face),
-		jersey: { id: "jersey" },
-		teamColors: colors,
+		jersey: { id: p.uniform[0] },
+		teamColors: p.uniform[1],
 	});
 	return studio.innerHTML;
 };
 
-const drawFace = (div, p, colors) => {
-	div.innerHTML = faceSvg(p, colors);
+const drawFace = (div, p) => {
+	div.innerHTML = faceSvg(p);
 };
 
 const faceEl = (p) => {
@@ -97,7 +86,7 @@ const pairEl = (p, eager) => {
 // Favicon: somebody's face
 const icon = document.createElement("link");
 icon.rel = "icon";
-icon.href = `data:image/svg+xml,${encodeURIComponent(faceSvg(pick(withPhoto), COLORS[0]))}`;
+icon.href = `data:image/svg+xml,${encodeURIComponent(faceSvg(pick(withPhoto)))}`;
 document.head.append(icon);
 
 // Ticker
@@ -186,13 +175,11 @@ for (const p of players) {
 await bbgm.toUI("realtimeUpdate", [["playerMovement"]]);
 console.log(\`Updated \${count} players\`);`;
 
-const fetchCode = (from, to) => `// BBGM Real Faces, draft classes ${from}-${to}
+const code = `// BBGM Real Faces
 const response = await fetch("${SITE}players.json");
 const faces = new Map();
-for (const [id, , year, , face] of await response.json()) {
-	if (year >= ${from} && year <= ${to}) {
-		faces.set(id, face);
-	}
+for (const [id, , , , face] of await response.json()) {
+	faces.set(id, face);
 }
 ${applyCode}`;
 
@@ -214,26 +201,4 @@ const copyText = async (text, button) => {
 	}, 1500);
 };
 
-let code = "";
-
-const range = () => {
-	let from = Number($("from").value) || MIN_YEAR;
-	let to = Number($("to").value) || MAX_YEAR;
-	from = Math.min(Math.max(from, MIN_YEAR), MAX_YEAR);
-	to = Math.min(Math.max(to, MIN_YEAR), MAX_YEAR);
-	return from <= to ? [from, to] : [to, from];
-};
-
-const update = () => {
-	const [from, to] = range();
-	const count = players.filter((p) => p.year >= from && p.year <= to).length;
-	$("count").textContent = `${count.toLocaleString()} players`;
-	code = fetchCode(from, to);
-	$("copy").disabled = count === 0;
-};
-
 $("copy").onclick = () => copyText(code, $("copy"));
-for (const id of ["from", "to"]) {
-	$(id).addEventListener("input", update);
-}
-update();
