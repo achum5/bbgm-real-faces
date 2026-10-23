@@ -88,10 +88,15 @@ const pairEl = (p) => {
 	return div;
 };
 
-// Favicon: somebody's face
+// Favicon: a random face from the current players.json, cropped to the head.
+// As a file of its own the SVG needs its namespace, which the page doesn't.
 const icon = document.createElement("link");
 icon.rel = "icon";
-icon.href = `data:image/svg+xml,${encodeURIComponent(faceSvg(pick(withPhoto)))}`;
+icon.href = `data:image/svg+xml,${encodeURIComponent(
+	faceSvg(pick(players))
+		.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"')
+		.replace(/viewBox="[^"]*"/, 'viewBox="-15 50 430 430"'),
+)}`;
 document.head.append(icon);
 
 // Ticker
