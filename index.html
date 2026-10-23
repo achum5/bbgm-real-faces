@@ -25,7 +25,7 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 
 <div class="container my-3">
 	<div class="row g-4">
-		<div class="col-lg-8">
+		<div class="col-lg-5">
 			<h2>Add to your league</h2>
 			<div class="d-flex align-items-center gap-2 mb-3">
 				<button class="btn btn-primary text-nowrap" id="copy">Copy faces</button>
@@ -39,22 +39,31 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 			</ul>
 		</div>
 
-		<div class="col-lg-4">
-			<div class="d-flex align-items-baseline gap-2">
-				<h2 class="mb-2" id="viewer-name"></h2>
-				<span class="text-body-secondary" id="viewer-year"></span>
+		<div class="col-lg-7">
+			<div class="d-flex align-items-center gap-2 mb-2">
+				<div class="picker">
+					<input type="text" class="name" id="name" autocomplete="off" spellcheck="false" placeholder="Search players" title="Search players" aria-label="Player">
+					<div class="matches list-group" id="matches" hidden></div>
+				</div>
+				<button class="btn btn-sm btn-light border" id="random">Random</button>
 			</div>
 			<div class="viewer">
 				<img id="viewer-photo" alt="" referrerpolicy="no-referrer">
 				<div class="face" id="viewer-face"></div>
 			</div>
-			<button class="btn btn-light border mt-2" id="random">Random player</button>
+			<a href="#" class="d-inline-block mt-2" id="request-toggle" hidden>Request a change</a>
+			<div id="request" class="mt-2" hidden>
+				<ul class="nav nav-pills parts" id="parts"></ul>
+				<div id="part" class="mt-2"></div>
+				<textarea class="form-control form-control-sm mt-2" id="note" rows="2" placeholder="What should change?"></textarea>
+				<div class="d-flex align-items-center gap-2 mt-2">
+					<button class="btn btn-primary btn-sm" id="send">Send</button>
+					<button class="btn btn-light border btn-sm" id="reset">Reset</button>
+					<span class="text-body-secondary" id="sent"></span>
+				</div>
+			</div>
 		</div>
 	</div>
-
-	<h2 class="mt-4">Players</h2>
-	<input type="search" class="form-control form-control-sm search mb-2" id="search" placeholder="Search" autocomplete="off">
-	<div class="results" id="results"></div>
 </div>
 
 <script type="module" src="app.js"></script>

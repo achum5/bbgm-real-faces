@@ -124,26 +124,120 @@ h3 { font-size: 16px; }
 	aspect-ratio: 2 / 3;
 }
 
-/* Search results */
-.results {
+/* Player name, which is also the search box */
+.picker {
+	position: relative;
+	min-width: 0;
+	max-width: 100%;
+}
+.name {
+	width: 100%;
+	font-size: 20px;
+	font-weight: 500;
+	line-height: 1.2;
+	padding: 2px 6px;
+	margin-left: -6px;
+	color: inherit;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--bs-border-radius);
+}
+.name.measure {
+	position: absolute;
+	left: -10000px;
+	width: auto;
+	white-space: pre;
+	visibility: hidden;
+}
+.name:hover {
+	border-color: var(--bs-border-color);
+}
+.name:focus {
+	outline: none;
+	border-color: var(--bs-primary);
+	background: var(--bs-body-bg);
+}
+.matches {
+	position: absolute;
+	z-index: 10;
+	top: 100%;
+	left: -6px;
+	min-width: 260px;
+	max-height: 360px;
+	overflow-y: auto;
+	box-shadow: var(--bs-box-shadow);
+}
+.matches .list-group-item {
+	padding: 4px 8px;
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+.matches .year {
+	opacity: 0.6;
+}
+
+/* Change requests */
+.parts .nav-link {
+	padding: 2px 8px;
+}
+.row-label {
+	margin-top: 6px;
+	font-weight: 500;
+}
+.options {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 10px;
+	gap: 4px;
+	max-height: 260px;
+	overflow-y: auto;
 }
-.player {
-	width: 128px;
-	cursor: pointer;
-}
-.player .pair img {
-	width: 62px;
+.option {
+	width: 52px;
 	height: 78px;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 4px;
+	background: var(--bs-secondary-bg);
 }
-.player .pair .face {
-	width: 62px;
-	height: 93px;
+.option.selected {
+	border-color: var(--bs-primary);
 }
-.player .name {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+.option svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+.slider {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 320px;
+	margin-top: 6px;
+}
+.slider .form-range {
+	flex: 1;
+}
+.swatches {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	margin-top: 6px;
+}
+.swatch {
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 2px solid var(--bs-border-color);
+	border-radius: 50%;
+}
+.swatch.selected {
+	border-color: var(--bs-primary);
+	box-shadow: 0 0 0 2px var(--bs-primary);
+}
+.swatches .form-control-color {
+	width: 32px;
+	height: 28px;
+	padding: 2px;
 }

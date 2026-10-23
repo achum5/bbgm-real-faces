@@ -2,6 +2,12 @@ import { display } from "./faces.js";
 
 const SITE = new URL(".", location.href).href;
 
+// Change requests are posted to a Google Form; null hides the button
+const FORM = null;
+
+const SKINS = ["#f2d0b8", "#ecc8b3", "#e3bda5", "#ddb7a0", "#d9a886", "#cc9a78", "#c49070", "#bb876f", "#b07a5f", "#a67358", "#9b6a50", "#8d5d45", "#80523e", "#7a4a36", "#6e4030", "#673a2a", "#5a3626", "#4a2c20"];
+const HAIR_COLORS = ["#0f0902", "#1c1008", "#272421", "#3D2314", "#5A3825", "#7a5230", "#9a6a40", "#b8925a", "#c8a878", "#d8c8a0", "#b0602e", "#8c8c8c", "#d9d9d9"];
+
 const $ = (id) => document.getElementById(id);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const shuffle = (list) => {
@@ -18,17 +24,23 @@ const plain = (s) =>
 		.replace(/\p{Diacritic}/gu, "")
 		.toLowerCase();
 
-const res = await fetch("players.json");
-const players = (await res.json()).map(([id, name, year, photo, face, score, uniform]) => ({
-	id,
-	name,
-	year,
-	photo,
-	face,
-	score,
-	uniform,
-	search: plain(name),
-}));
+const [players, options] = await Promise.all([
+	fetch("players.json")
+		.then((res) => res.json())
+		.then((rows) =>
+			rows.map(([id, name, year, photo, face, score, uniform]) => ({
+				id,
+				name,
+				year,
+				photo,
+				face,
+				score,
+				uniform,
+				search: plain(name),
+			})),
+		),
+	fetch("options.json").then((res) => res.json()),
+]);
 const withPhoto = players.filter((p) => p.photo);
 // Names people know, for the ticker
 const known = withPhoto.filter((p) => p.score >= 5);
@@ -40,45 +52,32 @@ studio.style.cssText = "position:absolute;left:-10000px;top:0;width:400px;height
 document.body.append(studio);
 
 // Each player wears his team's jersey from the 2027 league file
-const faceSvg = (p) => {
+const faceSvg = (p, face = p.face) => {
 	studio.innerHTML = "";
 	display(studio, {
-		...structuredClone(p.face),
+		...structuredClone(face),
 		jersey: { id: p.uniform[0] },
 		teamColors: p.uniform[1],
 	});
 	return studio.innerHTML;
 };
 
-const drawFace = (div, p) => {
-	div.innerHTML = faceSvg(p);
-};
-
 const faceEl = (p) => {
 	const div = document.createElement("div");
 	div.className = "face";
-	drawFace(div, p);
+	div.innerHTML = faceSvg(p);
 	return div;
 };
 
-const photoEl = (p, onFail, eager) => {
-	const img = document.createElement("img");
-	img.alt = "";
-	img.referrerPolicy = "no-referrer";
-	img.loading = eager ? "eager" : "lazy";
-	img.src = p.photo;
-	img.onerror = onFail;
-	return img;
-};
-
-const pairEl = (p, eager) => {
+const pairEl = (p) => {
 	const div = document.createElement("div");
 	div.className = "pair";
 	div.title = `${p.name} (${p.year})`;
-	if (p.photo) {
-		div.append(photoEl(p, () => div.querySelector("img")?.remove(), eager));
-	}
-	div.append(faceEl(p));
+	const img = document.createElement("img");
+	img.alt = "";
+	img.referrerPolicy = "no-referrer";
+	img.src = p.photo;
+	div.append(img, faceEl(p));
 	div.onclick = () => show(p, true);
 	return div;
 };
@@ -94,7 +93,7 @@ const tickerPlayers = shuffle(known).slice(0, 40);
 const track = $("ticker-track");
 for (let copy = 0; copy < 2; copy++) {
 	for (const p of tickerPlayers) {
-		const div = pairEl(p, true);
+		const div = pairEl(p);
 		// A photo that won't load takes its whole pair with it, in both copies
 		div.querySelector("img").onerror = () => {
 			for (const el of track.querySelectorAll(`[data-id="${p.id}"]`)) {
@@ -108,50 +107,342 @@ for (let copy = 0; copy < 2; copy++) {
 track.style.setProperty("--ticker-duration", `${tickerPlayers.length * 3}s`);
 
 // Viewer
+let current;
+let edited;
+const nameInput = $("name");
+const viewerFace = $("viewer-face");
+
+// The name box is as wide as the name, and wider while searching
+const measure = document.createElement("span");
+measure.className = "name measure";
+document.body.append(measure);
+const fitName = () => {
+	measure.textContent = nameInput.value || nameInput.placeholder;
+	const width = measure.offsetWidth + 2;
+	nameInput.style.width = `${document.activeElement === nameInput ? Math.max(width, 260) : width}px`;
+};
+
+const drawViewer = () => {
+	viewerFace.innerHTML = faceSvg(current, edited ?? current.face);
+};
+
 const show = (p, scroll) => {
-	const name = $("viewer-name");
-	name.innerHTML = "";
-	const link = document.createElement("a");
-	link.href = `https://www.basketball-reference.com/players/${p.id[0]}/${p.id}.html`;
-	link.textContent = p.name;
-	name.append(link);
-	$("viewer-year").textContent = p.year;
+	current = p;
+	nameInput.value = p.name;
+	fitName();
 	const img = $("viewer-photo");
 	img.hidden = !p.photo;
 	img.onerror = () => {
 		img.hidden = true;
 	};
 	img.src = p.photo ?? "";
-	drawFace($("viewer-face"), p);
+	if (!$("request").hidden) {
+		startEditing();
+	}
+	drawViewer();
 	if (scroll) {
-		$("viewer-name").scrollIntoView({ behavior: "smooth", block: "center" });
+		nameInput.scrollIntoView({ behavior: "smooth", block: "center" });
 	}
 };
 $("random").onclick = () => show(pick(players));
 show(pick(players));
 
-// Search
-const results = $("results");
-$("search").oninput = (event) => {
-	const q = plain(event.target.value.trim());
-	results.innerHTML = "";
-	if (q.length < 2) {
+// Search: the player's name is the search box
+const matchesBox = $("matches");
+let matches = [];
+let active = 0;
+
+const closeMatches = () => {
+	matchesBox.hidden = true;
+	matches = [];
+};
+
+const renderMatches = () => {
+	matchesBox.innerHTML = "";
+	for (const [i, p] of matches.entries()) {
+		const item = document.createElement("button");
+		item.type = "button";
+		item.className = `list-group-item list-group-item-action${i === active ? " active" : ""}`;
+		item.textContent = p.name;
+		const year = document.createElement("span");
+		year.className = "year";
+		year.textContent = p.year;
+		item.append(year);
+		// mousedown, so it lands before the input's blur closes the list
+		item.onmousedown = (event) => {
+			event.preventDefault();
+			choose(p);
+		};
+		matchesBox.append(item);
+	}
+	matchesBox.hidden = matches.length === 0;
+};
+
+const choose = (p) => {
+	closeMatches();
+	nameInput.blur();
+	show(p);
+};
+
+nameInput.onfocus = () => {
+	nameInput.select();
+	fitName();
+};
+nameInput.oninput = () => {
+	const q = plain(nameInput.value.trim());
+	active = 0;
+	matches =
+		q.length === 0
+			? []
+			: players
+					.filter((p) => p.search.includes(q))
+					.sort((a, b) => b.search.startsWith(q) - a.search.startsWith(q) || b.score - a.score)
+					.slice(0, 12);
+	renderMatches();
+	fitName();
+};
+nameInput.onkeydown = (event) => {
+	if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+		event.preventDefault();
+		if (matches.length > 0) {
+			active = (active + (event.key === "ArrowDown" ? 1 : -1) + matches.length) % matches.length;
+			renderMatches();
+		}
+	} else if (event.key === "Enter") {
+		if (matches[active]) {
+			choose(matches[active]);
+		}
+	} else if (event.key === "Escape") {
+		nameInput.blur();
+	}
+};
+nameInput.onblur = () => {
+	closeMatches();
+	nameInput.value = current.name;
+	fitName();
+};
+
+// Change requests: edit the face like the facesjs editor, add a note, send
+const PARTS = [
+	{ label: "Head", rows: [["head"]], sliders: [["fatness", "Width", 0, 1, 0.05]], colors: ["body.color", SKINS] },
+	{ label: "Hair", rows: [["hair"], ["hairBg", "Back"]], colors: ["hair.color", HAIR_COLORS] },
+	{ label: "Eyes", rows: [["eye"]], sliders: [["eye.angle", "Angle", -10, 15, 1]] },
+	{ label: "Brows", rows: [["eyebrow"]], sliders: [["eyebrow.angle", "Angle", -15, 20, 1]] },
+	{ label: "Nose", rows: [["nose"]], sliders: [["nose.size", "Size", 0.5, 1.25, 0.05]] },
+	{ label: "Mouth", rows: [["mouth"]] },
+	{ label: "Facial hair", rows: [["facialHair"]], sliders: [["stubble", "Stubble", 0, 0.6, 0.05]] },
+	{ label: "Ears", rows: [["ear"]], sliders: [["ear.size", "Size", 0.5, 1.5, 0.05]] },
+	{ label: "Lines", rows: [["eyeLine", "Eyes"], ["smileLine", "Smile"], ["miscLine", "Other"]] },
+	{ label: "Extras", rows: [["glasses", "Glasses"], ["accessories", "Headwear"]] },
+];
+
+const getPath = (face, path) => {
+	if (path === "stubble") {
+		return Number(face.head.shave?.match(/([\d.]+)\)$/)?.[1] ?? 0);
+	}
+	return path.split(".").reduce((o, k) => o?.[k], face);
+};
+const setPath = (face, path, value) => {
+	if (path === "stubble") {
+		const shave = face.head.shave || "rgba(0,0,0,0)";
+		face.head.shave = shave.replace(/[\d.]+\)$/, `${value})`);
 		return;
 	}
-	const found = players
-		.filter((p) => p.search.includes(q))
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 30);
-	for (const p of found) {
-		const div = document.createElement("div");
-		div.className = "player";
-		div.append(pairEl(p));
-		const name = document.createElement("div");
-		name.className = "name";
-		name.textContent = `${p.name} ${p.year}`;
-		div.append(name);
-		results.append(div);
+	const keys = path.split(".");
+	let o = face;
+	for (const k of keys.slice(0, -1)) {
+		o = o[k] ??= {};
 	}
+	o[keys.at(-1)] = value;
+};
+
+let partIndex = 0;
+let thumbJob = 0;
+
+const startEditing = () => {
+	edited = structuredClone(current.face);
+	$("note").value = "";
+	$("sent").textContent = "";
+	renderPart();
+};
+
+const change = (path, value) => {
+	setPath(edited, path, value);
+	drawViewer();
+	renderPart();
+};
+
+const renderParts = () => {
+	const list = $("parts");
+	list.innerHTML = "";
+	for (const [i, part] of PARTS.entries()) {
+		const li = document.createElement("li");
+		li.className = "nav-item";
+		const a = document.createElement("a");
+		a.href = "#";
+		a.className = `nav-link${i === partIndex ? " active" : ""}`;
+		a.textContent = part.label;
+		a.onclick = (event) => {
+			event.preventDefault();
+			partIndex = i;
+			renderParts();
+			renderPart();
+		};
+		li.append(a);
+		list.append(li);
+	}
+};
+
+// Thumbnails are drawn a few at a time so the page never locks up
+const drawThumbs = (jobs) => {
+	const job = ++thumbJob;
+	let i = 0;
+	const step = () => {
+		if (job !== thumbJob) {
+			return;
+		}
+		for (const end = Math.min(i + 8, jobs.length); i < end; i++) {
+			const [el, face] = jobs[i];
+			el.innerHTML = faceSvg(current, face);
+		}
+		if (i < jobs.length) {
+			requestAnimationFrame(step);
+		}
+	};
+	step();
+};
+
+const renderPart = () => {
+	const part = PARTS[partIndex];
+	const box = $("part");
+	box.innerHTML = "";
+	const jobs = [];
+	for (const [feature, label] of part.rows) {
+		if (label) {
+			const h = document.createElement("div");
+			h.className = "row-label";
+			h.textContent = label;
+			box.append(h);
+		}
+		const grid = document.createElement("div");
+		grid.className = "options";
+		const now = edited[feature]?.id;
+		for (const id of options[feature]) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = `option${id === now ? " selected" : ""}`;
+			button.title = id;
+			button.onclick = () => change(`${feature}.id`, id);
+			const face = structuredClone(edited);
+			setPath(face, `${feature}.id`, id);
+			jobs.push([button, face]);
+			grid.append(button);
+		}
+		box.append(grid);
+	}
+	for (const [path, label, min, max, stepSize] of part.sliders ?? []) {
+		const row = document.createElement("label");
+		row.className = "slider";
+		row.textContent = label;
+		const input = document.createElement("input");
+		input.type = "range";
+		input.className = "form-range";
+		Object.assign(input, { min, max, step: stepSize, value: getPath(edited, path) ?? min });
+		input.oninput = () => {
+			setPath(edited, path, Number(input.value));
+			drawViewer();
+		};
+		input.onchange = () => renderPart();
+		row.append(input);
+		box.append(row);
+	}
+	if (part.colors) {
+		const [path, swatches] = part.colors;
+		const row = document.createElement("div");
+		row.className = "swatches";
+		const now = String(getPath(edited, path)).toLowerCase();
+		for (const color of swatches) {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = `swatch${color.toLowerCase() === now ? " selected" : ""}`;
+			button.style.background = color;
+			button.title = color;
+			button.onclick = () => change(path, color);
+			row.append(button);
+		}
+		const custom = document.createElement("input");
+		custom.type = "color";
+		custom.className = "form-control form-control-color";
+		custom.value = /^#[\da-f]{6}$/i.test(now) ? now : "#000000";
+		custom.title = "Other color";
+		custom.oninput = () => {
+			setPath(edited, path, custom.value);
+			drawViewer();
+		};
+		custom.onchange = () => renderPart();
+		row.append(custom);
+		box.append(row);
+	}
+	drawThumbs(jobs);
+};
+
+const flatten = (o, prefix = "", out = {}) => {
+	for (const [k, v] of Object.entries(o)) {
+		if (v && typeof v === "object" && !Array.isArray(v)) {
+			flatten(v, `${prefix}${k}.`, out);
+		} else {
+			out[prefix + k] = v;
+		}
+	}
+	return out;
+};
+const changes = () => {
+	const a = flatten(current.face);
+	const b = flatten(edited);
+	return Object.keys(b)
+		.filter((k) => a[k] !== b[k])
+		.map((k) => `${k}: ${a[k]} -> ${b[k]}`);
+};
+
+$("request-toggle").hidden = !FORM;
+$("request-toggle").onclick = (event) => {
+	event.preventDefault();
+	const box = $("request");
+	box.hidden = !box.hidden;
+	if (box.hidden) {
+		edited = undefined;
+		thumbJob++;
+		drawViewer();
+	} else {
+		renderParts();
+		startEditing();
+		drawViewer();
+	}
+};
+$("reset").onclick = startEditing;
+$("send").onclick = async () => {
+	const list = changes();
+	const note = $("note").value.trim();
+	if (list.length === 0 && !note) {
+		$("sent").textContent = "Change the face or add a note first";
+		return;
+	}
+	const body = new URLSearchParams({
+		[FORM.player]: `${current.name} (${current.year}) ${current.id}`,
+		[FORM.change]: list.join("\n"),
+		[FORM.face]: JSON.stringify(edited),
+		[FORM.note]: note,
+	});
+	$("send").disabled = true;
+	$("sent").textContent = "Sending...";
+	try {
+		// Google Forms doesn't allow reading the reply, so a sent request is taken as received
+		await fetch(FORM.url, { method: "POST", mode: "no-cors", body });
+		$("sent").textContent = "Sent, thanks";
+	} catch {
+		$("sent").textContent = "Couldn't send, try again";
+	}
+	$("send").disabled = false;
 };
 
 // Worker console code
