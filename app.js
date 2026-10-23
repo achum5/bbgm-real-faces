@@ -483,13 +483,83 @@ for (const p of players) {
 await bbgm.toUI("realtimeUpdate", [["playerMovement"]]);
 console.log(\`Updated \${count} players\`);`;
 
-const code = `// BBGM Real Faces
+// Real team names, logos and colors, from u/alexnoob's team file. It is the
+// same JSON that goes in BBGM's Global Settings > Team Info; this applies it to
+// the open league, every past season included, and saves it there too so new
+// leagues and future relocations use it.
+const TEAM_FILE = "https://raw.githubusercontent.com/alexnoob/BasketBall-GM-Rosters/master/team%20data.json";
+const teamCode = `
+// Real team names and logos, from u/alexnoob: https://github.com/alexnoob/BasketBall-GM-Rosters
+const teamInfo = await (await fetch("${TEAM_FILE}")).json();
+const KEYS = ["abbrev", "region", "name", "pop", "colors", "jersey", "imgURL", "imgURLSmall"];
+const applyInfo = (t, season, srID) => {
+	const root = teamInfo[srID];
+	if (!root) {
+		return false;
+	}
+	const info = { ...root };
+	const seasons = Object.keys(root.seasons ?? {}).map(Number).filter((s) => s <= season).sort((a, b) => a - b);
+	for (const s of seasons) {
+		Object.assign(info, root.seasons[s]);
+	}
+	let changed = false;
+	for (const key of KEYS) {
+		if (info[key] && JSON.stringify(info[key]) !== JSON.stringify(t[key])) {
+			t[key] = info[key];
+			changed = true;
+			if (key === "imgURL" && info.imgURLSmall === undefined) {
+				delete t.imgURLSmall;
+			}
+		}
+	}
+	return changed;
+};
+const teams = await bbgm.idb.cache.teams.getAll();
+const srIDs = new Map(teams.map((t) => [t.tid, t.srID]));
+let teamCount = 0;
+for (const t of teams) {
+	if (applyInfo(t, bbgm.g.get("season"), t.srID)) {
+		await bbgm.idb.cache.teams.put(t);
+		teamCount += 1;
+	}
+}
+const recent = await bbgm.idb.cache.teamSeasons.getAll();
+for (const ts of recent) {
+	if (applyInfo(ts, ts.season, ts.srID ?? srIDs.get(ts.tid))) {
+		await bbgm.idb.cache.teamSeasons.put(ts);
+	}
+}
+const inCache = new Set(recent.map((ts) => ts.rid));
+const older = (await bbgm.idb.league.getAll("teamSeasons")).filter((ts) => !inCache.has(ts.rid));
+const tx = bbgm.idb.league.transaction("teamSeasons", "readwrite");
+for (const ts of older) {
+	if (applyInfo(ts, ts.season, ts.srID ?? srIDs.get(ts.tid))) {
+		tx.store.put(ts);
+	}
+}
+await tx.done;
+await bbgm.league.setGameAttributes({
+	teamInfoCache: teams.map((t) => ({
+		abbrev: t.abbrev,
+		disabled: t.disabled,
+		imgURL: t.imgURL,
+		imgURLSmall: t.imgURLSmall,
+		name: t.name,
+		region: t.region,
+	})),
+});
+await bbgm.league.updateMeta();
+await bbgm.idb.meta.put("attributes", teamInfo, "realTeamInfo");
+await bbgm.toUI("realtimeUpdate", [["team"]]);
+console.log(\`Updated \${teamCount} teams\`);`;
+
+const buildCode = (withTeams) => `// BBGM Real Faces
 const response = await fetch("${SITE}players.json");
 const faces = new Map();
 for (const [id, , , , face] of await response.json()) {
 	faces.set(id, face);
 }
-${applyCode}`;
+${applyCode}${withTeams ? teamCode : ""}`;
 
 const copyText = async (text, button) => {
 	try {
@@ -509,4 +579,4 @@ const copyText = async (text, button) => {
 	}, 1500);
 };
 
-$("copy").onclick = () => copyText(code, $("copy"));
+$("copy").onclick = () => copyText(buildCode($("teams").checked), $("copy"));
