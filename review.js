@@ -354,8 +354,9 @@ const card = (req) => {
 			});
 		}
 	} else {
-		const accept = button("Accept", "btn-primary", () => decide(req, "accepted"));
-		accept.disabled = req.bad || lines.length === 0;
+		const matches = !req.bad && Object.keys(req.set).length > 0 && lines.length === 0;
+		const accept = button(matches ? "Mark done" : "Accept", "btn-primary", () => decide(req, "accepted", matches ? {} : req.set));
+		accept.disabled = req.bad || (lines.length === 0 && !matches);
 		button("Edit", "btn-light border", () => {
 			stopEditing();
 			editing = { req, row: req.row, redraw };
