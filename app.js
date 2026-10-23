@@ -510,7 +510,7 @@ $("send").onclick = async () => {
 };
 
 // The note beside the request button
-$("info-text").textContent = `${players.length.toLocaleString()} faces is a ton to get right, so please send suggested edits here, no matter how nitpicky. I'd love to get as many of these faces as accurate as possible. Thanks!`;
+$("info-text").textContent = `${players.length.toLocaleString()} faces is a ton to get perfectly right, so please send suggested edits here, no matter how nitpicky. I'd love to get as many of these faces as accurate as possible. Thanks!`;
 const showInfo = (show) => {
 	$("info-pop").hidden = !show;
 	$("info").setAttribute("aria-expanded", String(show));
@@ -646,16 +646,38 @@ for (const [id, , , , face] of await response.json()) {
 }
 ${applyCode}${$("teams").checked ? teamCode : ""}${$("god-off").checked ? godCode($("achievements").checked) : ""}`;
 
+// The options start on, and each device remembers what its user turned off
+const OPTIONS = ["teams", "god-off", "achievements"];
+const remember = () => {
+	try {
+		for (const id of OPTIONS) {
+			localStorage.setItem(`option-${id}`, $(id).checked ? "1" : "0");
+		}
+	} catch {}
+};
+for (const id of OPTIONS) {
+	try {
+		if (localStorage.getItem(`option-${id}`) === "0") {
+			$(id).checked = false;
+		}
+	} catch {}
+}
 // Allowing achievements means God Mode has to go off too
+if ($("achievements").checked) {
+	$("god-off").checked = true;
+}
+$("teams").onchange = remember;
 $("achievements").onchange = () => {
 	if ($("achievements").checked) {
 		$("god-off").checked = true;
 	}
+	remember();
 };
 $("god-off").onchange = () => {
 	if (!$("god-off").checked) {
 		$("achievements").checked = false;
 	}
+	remember();
 };
 
 const copyText = async (text, button) => {

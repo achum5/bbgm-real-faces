@@ -209,13 +209,32 @@ h3 { font-size: 16px; }
 	align-items: center;
 	gap: 6px;
 }
+/* BBGM's own help icon */
+@font-face {
+	font-family: "Glyphicons Halflings";
+	src: url("fonts/glyphicons-halflings-regular.woff2") format("woff2");
+}
+.glyphicon {
+	position: relative;
+	top: 1px;
+	display: inline-block;
+	font-family: "Glyphicons Halflings";
+	font-style: normal;
+	font-weight: normal;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+.glyphicon-question-sign:before {
+	content: "\e085";
+}
 .info-btn {
-	padding: 0 2px;
+	padding: 0;
 	border: 0;
 	background: none;
-	color: var(--bs-link-color);
-	font-size: 18px;
-	line-height: 1;
+	color: inherit;
+	font-size: 13px;
+	cursor: pointer;
 }
 .info-pop {
 	position: absolute;

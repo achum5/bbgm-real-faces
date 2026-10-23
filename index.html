@@ -29,15 +29,15 @@
 			<details class="mb-3 more">
 				<summary>More options</summary>
 				<div class="form-check mt-1">
-					<input class="form-check-input" type="checkbox" id="teams">
+					<input class="form-check-input" type="checkbox" id="teams" checked>
 					<label class="form-check-label" for="teams">Also use real team names and logos, from <a href="https://www.reddit.com/r/BasketballGM/s/Pc0lHWNXlE">u/alexnoob</a></label>
 				</div>
 				<div class="form-check">
-					<input class="form-check-input" type="checkbox" id="god-off">
+					<input class="form-check-input" type="checkbox" id="god-off" checked>
 					<label class="form-check-label" for="god-off">Turn God Mode off when done</label>
 				</div>
 				<div class="form-check ms-4">
-					<input class="form-check-input" type="checkbox" id="achievements">
+					<input class="form-check-input" type="checkbox" id="achievements" checked>
 					<label class="form-check-label" for="achievements">Allow achievements</label>
 				</div>
 			</details>
@@ -64,8 +64,8 @@
 				<div class="face" id="viewer-new" hidden></div>
 			</div>
 			<div class="request-row mt-2" id="request-row" hidden>
-				<button type="button" class="btn btn-sm btn-outline-primary" id="request-toggle" aria-expanded="false" aria-controls="request">Request a change</button>
-				<button type="button" class="info-btn" id="info" aria-label="About change requests" aria-expanded="false" aria-controls="info-pop">&#9432;</button>
+				<button type="button" class="btn btn-primary text-nowrap" id="request-toggle" aria-expanded="false" aria-controls="request">Request a change</button>
+				<button type="button" class="info-btn glyphicon glyphicon-question-sign" id="info" aria-label="About change requests" aria-expanded="false" aria-controls="info-pop"></button>
 				<div class="info-pop" id="info-pop" role="dialog" hidden><span id="info-text"></span></div>
 			</div>
 			<div class="editor mt-2" id="request" hidden>
