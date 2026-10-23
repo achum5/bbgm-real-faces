@@ -46,13 +46,24 @@ const withPhoto = players.filter((p) => p.photo);
 // Names people know, for the ticker and the random button
 const known = withPhoto.filter((p) => p.score >= 5);
 
-const drawFace = (div, p, colors = pick(COLORS)) => {
-	div.innerHTML = "";
-	display(div, {
+// facesjs measures each feature with getBBox to place it, which only works
+// on an element that's in the page, so every face is drawn here first
+const studio = document.createElement("div");
+studio.style.cssText = "position:absolute;left:-10000px;top:0;width:400px;height:600px";
+document.body.append(studio);
+
+const faceSvg = (p, colors = pick(COLORS)) => {
+	studio.innerHTML = "";
+	display(studio, {
 		...structuredClone(p.face),
 		jersey: { id: "jersey" },
 		teamColors: colors,
 	});
+	return studio.innerHTML;
+};
+
+const drawFace = (div, p, colors) => {
+	div.innerHTML = faceSvg(p, colors);
 };
 
 const faceEl = (p) => {
@@ -87,9 +98,7 @@ const pairEl = (p, eager) => {
 // Favicon: somebody's face
 const icon = document.createElement("link");
 icon.rel = "icon";
-const iconFace = document.createElement("div");
-drawFace(iconFace, pick(withPhoto), COLORS[0]);
-icon.href = `data:image/svg+xml,${encodeURIComponent(iconFace.innerHTML)}`;
+icon.href = `data:image/svg+xml,${encodeURIComponent(faceSvg(pick(withPhoto), COLORS[0]))}`;
 document.head.append(icon);
 
 // Ticker
