@@ -103,15 +103,21 @@ h3 { font-size: 16px; }
 	height: 90px;
 }
 
-/* Big viewer */
+/* Big viewer: photo, face, and while editing an arrow to the new face */
 .viewer {
 	display: flex;
 	align-items: flex-end;
-	gap: 12px;
+	gap: 10px;
+	/* the face drawings have empty space above the hair */
+	margin-top: -16px;
+}
+.viewer img,
+.viewer .face {
+	flex: 1 1 0;
+	min-width: 0;
+	max-width: 220px;
 }
 .viewer img {
-	width: 46%;
-	max-width: 220px;
 	aspect-ratio: 4 / 5;
 	object-fit: cover;
 	object-position: top;
@@ -119,9 +125,21 @@ h3 { font-size: 16px; }
 	background: var(--bs-secondary-bg);
 }
 .viewer .face {
-	width: 46%;
-	max-width: 220px;
 	aspect-ratio: 2 / 3;
+}
+.viewer .arrow {
+	flex: none;
+	align-self: center;
+	font-size: 24px;
+	opacity: 0.6;
+}
+@media (max-width: 575px) {
+	.viewer {
+		gap: 4px;
+	}
+	.viewer .arrow {
+		font-size: 18px;
+	}
 }
 
 /* Player name, which is also the search box */
@@ -149,8 +167,10 @@ h3 { font-size: 16px; }
 	white-space: pre;
 	visibility: hidden;
 }
-.name:hover {
-	border-color: var(--bs-border-color);
+@media (hover: hover) {
+	.name:hover {
+		border-color: var(--bs-border-color);
+	}
 }
 .name:focus {
 	outline: none;

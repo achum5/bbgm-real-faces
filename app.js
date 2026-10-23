@@ -128,8 +128,13 @@ const fitName = () => {
 	nameInput.style.width = `${document.activeElement === nameInput ? Math.max(width, 260) : width}px`;
 };
 
+// The face as it is, and once it's been edited, an arrow to the new one
 const drawViewer = () => {
-	viewerFace.innerHTML = faceSvg(current, edited ?? current.face);
+	const changed = edited !== undefined && changes().length > 0;
+	viewerFace.innerHTML = faceSvg(current);
+	$("viewer-arrow").hidden = !changed;
+	$("viewer-new").hidden = !changed;
+	$("viewer-new").innerHTML = changed ? faceSvg(current, edited) : "";
 };
 
 const show = (p, scroll) => {
@@ -270,6 +275,7 @@ const startEditing = () => {
 	$("note").value = "";
 	$("sent").textContent = "";
 	renderPart();
+	drawViewer();
 };
 
 const change = (path, value) => {
