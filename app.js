@@ -628,7 +628,23 @@ await bbgm.league.setGameAttributes({
 	})),
 });
 await bbgm.league.updateMeta();
-// Relocations and expansion teams still to come in this league get it too
+// BBGM schedules a made-up expansion for real leagues (teams with srIDs like
+// "_SET"), and a realignment to fit it in. Real teams means none of that, so
+// every team event from that season on goes.
+const soon = await bbgm.idb.cache.scheduledEvents.getAll();
+const soonIds = new Set(soon.map((e) => e.id));
+const later = (await bbgm.idb.league.getAll("scheduledEvents")).filter((e) => !soonIds.has(e.id));
+const madeUp = [...soon, ...later]
+	.filter((e) => e.type === "expansionDraft" && e.info.teams.some((t) => t.srID?.startsWith("_")))
+	.map((e) => e.season);
+const TEAM_EVENTS = ["expansionDraft", "confsDivs", "teamInfo", "contraction"];
+const isMadeUp = (e) => madeUp.length > 0 && e.season >= Math.min(...madeUp) && TEAM_EVENTS.includes(e.type);
+let removed = 0;
+for (const e of soon.filter(isMadeUp)) {
+	await bbgm.idb.cache.scheduledEvents.delete(e.id);
+	removed += 1;
+}
+// Relocations and expansion teams still to come in this league get the real info too
 const fixEvent = (e) => {
 	if (e.type === "teamInfo") {
 		return applyInfo(e.info, e.season, e.info.srID);
@@ -638,23 +654,23 @@ const fixEvent = (e) => {
 	}
 	return false;
 };
-const soon = await bbgm.idb.cache.scheduledEvents.getAll();
-for (const e of soon) {
+for (const e of soon.filter((e) => !isMadeUp(e))) {
 	if (fixEvent(e)) {
 		await bbgm.idb.cache.scheduledEvents.put(e);
 	}
 }
-const soonIds = new Set(soon.map((e) => e.id));
-const later = (await bbgm.idb.league.getAll("scheduledEvents")).filter((e) => !soonIds.has(e.id));
 const tx2 = bbgm.idb.league.transaction("scheduledEvents", "readwrite");
 for (const e of later) {
-	if (fixEvent(e)) {
+	if (isMadeUp(e)) {
+		tx2.store.delete(e.id);
+		removed += 1;
+	} else if (fixEvent(e)) {
 		tx2.store.put(e);
 	}
 }
 await tx2.done;
 await bbgm.toUI("realtimeUpdate", [["team"]]);
-console.log(\`Updated \${teamCount} teams\`);`;
+console.log(\`Updated \${teamCount} teams\${removed ? \`, removed \${removed} made-up expansion events\` : ""}\`);`;
 
 // Turning God Mode off leaves the league marked as having used it, which is
 // what keeps achievements off; clearing that mark too lets them count again
