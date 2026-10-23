@@ -3,7 +3,6 @@ import { display } from "./faces.js";
 const SITE = new URL(".", location.href).href;
 const MIN_YEAR = 1946;
 const MAX_YEAR = 2030;
-const BATCH_SIZE = 1000;
 
 const COLORS = [
 	["#89bfd3", "#7a1319", "#07364f"],
@@ -43,7 +42,7 @@ const players = (await res.json()).map(([id, name, year, photo, face, score]) =>
 	search: plain(name),
 }));
 const withPhoto = players.filter((p) => p.photo);
-// Names people know, for the ticker and the random button
+// Names people know, for the ticker
 const known = withPhoto.filter((p) => p.score >= 5);
 
 // facesjs measures each feature with getBBox to place it, which only works
@@ -139,8 +138,8 @@ const show = (p, scroll) => {
 		$("viewer-name").scrollIntoView({ behavior: "smooth", block: "center" });
 	}
 };
-$("random").onclick = () => show(pick(known));
-show(pick(known));
+$("random").onclick = () => show(pick(players));
+show(pick(players));
 
 // Search
 const results = $("results");
@@ -166,35 +165,8 @@ $("search").oninput = (event) => {
 	}
 };
 
-// Decades
-const decades = $("decades");
-for (let start = 1940; start <= 2020; start += 10) {
-	const best = players
-		.filter((p) => p.year >= start && p.year < start + 10)
-		.sort((a, b) => b.score - a.score)
-		.slice(0, 12);
-	const h = document.createElement("h3");
-	h.className = "mt-3";
-	h.textContent = `${start}s`;
-	const row = document.createElement("div");
-	row.className = "decade";
-	for (const p of best) {
-		const div = document.createElement("div");
-		div.className = "player";
-		div.title = p.name;
-		div.append(faceEl(p));
-		const name = document.createElement("div");
-		name.className = "name";
-		name.textContent = p.name.split(" ").slice(1).join(" ") || p.name;
-		div.append(name);
-		div.onclick = () => show(p, true);
-		row.append(div);
-	}
-	decades.append(h, row);
-}
-
 // Worker console code
-const applyCode = (keepPhotos) => `const players = bbgm.idb.merged
+const applyCode = `const players = bbgm.idb.merged
 	? await bbgm.idb.merged.players.getAll()
 	: await bbgm.idb.getCopies.players({}, "noCopyCache");
 let count = 0;
@@ -206,13 +178,7 @@ for (const p of players) {
 			jersey: p.face?.jersey ?? { id: "jersey" },
 			teamColors: p.face?.teamColors ?? ["#89bfd3", "#7a1319", "#07364f"],
 		};
-		${
-			keepPhotos
-				? `if (!p.imgURL || p.imgURL.includes("blank-face")) {
-			p.imgURL = "";
-		}`
-				: `p.imgURL = "";`
-		}
+		p.imgURL = "";
 		await bbgm.idb.cache.players.put(p);
 		count += 1;
 	}
@@ -220,7 +186,7 @@ for (const p of players) {
 await bbgm.toUI("realtimeUpdate", [["playerMovement"]]);
 console.log(\`Updated \${count} players\`);`;
 
-const fetchCode = (from, to, keepPhotos) => `// BBGM Real Faces, draft classes ${from}-${to}
+const fetchCode = (from, to) => `// BBGM Real Faces, draft classes ${from}-${to}
 const response = await fetch("${SITE}players.json");
 const faces = new Map();
 for (const [id, , year, , face] of await response.json()) {
@@ -228,24 +194,7 @@ for (const [id, , year, , face] of await response.json()) {
 		faces.set(id, face);
 	}
 }
-${applyCode(keepPhotos)}`;
-
-const batchCode = (data, label, keepPhotos) => `// BBGM Real Faces, ${label}
-const data = "${data}";
-const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
-const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-const faces = new Map(await new Response(stream).json());
-${applyCode(keepPhotos)}`;
-
-const gzipBase64 = async (text) => {
-	const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
-	const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
-	let binary = "";
-	for (let i = 0; i < bytes.length; i += 0x8000) {
-		binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-	}
-	return btoa(binary);
-};
+${applyCode}`;
 
 const copyText = async (text, button) => {
 	try {
@@ -266,8 +215,6 @@ const copyText = async (text, button) => {
 };
 
 let code = "";
-let batches = [];
-let version = 0;
 
 const range = () => {
 	let from = Number($("from").value) || MIN_YEAR;
@@ -277,64 +224,16 @@ const range = () => {
 	return from <= to ? [from, to] : [to, from];
 };
 
-const update = async () => {
-	const mine = ++version;
+const update = () => {
 	const [from, to] = range();
-	const keepPhotos = $("keep-photos").checked;
-	const chosen = players.filter((p) => p.year >= from && p.year <= to);
-	$("count").textContent = `${chosen.length.toLocaleString()} players`;
-	code = fetchCode(from, to, keepPhotos);
-	$("code").textContent = code;
-	$("copy").disabled = chosen.length === 0;
-
-	// Built ahead of time so each copy happens right in the click, which
-	// phones require
-	const list = [];
-	const n = Math.ceil(chosen.length / BATCH_SIZE);
-	for (let i = 0; i < n; i++) {
-		const part = chosen.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-		const years = `${part[0].year}-${part.at(-1).year}`;
-		const data = await gzipBase64(JSON.stringify(part.map((p) => [p.id, p.face])));
-		if (mine !== version) {
-			return;
-		}
-		list.push({
-			label: `batch ${i + 1} of ${n} (${years})`,
-			years,
-			count: part.length,
-			code: batchCode(data, `batch ${i + 1} of ${n} (${years})`, keepPhotos),
-		});
-	}
-	batches = list;
-	renderBatches();
-};
-
-const renderBatches = () => {
-	const box = $("batches");
-	box.innerHTML = "";
-	for (const [i, batch] of batches.entries()) {
-		const row = document.createElement("div");
-		row.className = "batch";
-		const button = document.createElement("button");
-		button.className = "btn btn-sm btn-light border";
-		button.textContent = `Copy ${i + 1}`;
-		button.onclick = () => {
-			copyText(batch.code, button);
-			row.classList.add("done");
-		};
-		const text = document.createElement("span");
-		text.textContent = `${batch.years}, ${batch.count} players`;
-		row.append(button, text);
-		box.append(row);
-	}
+	const count = players.filter((p) => p.year >= from && p.year <= to).length;
+	$("count").textContent = `${count.toLocaleString()} players`;
+	code = fetchCode(from, to);
+	$("copy").disabled = count === 0;
 };
 
 $("copy").onclick = () => copyText(code, $("copy"));
-$("batch-toggle").onclick = (event) => {
-	event.preventDefault();
-	$("batches").hidden = !$("batches").hidden;
-};
-for (const id of ["from", "to", "keep-photos"]) {
+for (const id of ["from", "to"]) {
 	$(id).addEventListener("input", update);
 }
 update();

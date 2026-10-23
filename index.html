@@ -28,7 +28,7 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 
 <div class="container my-3">
 	<div class="row g-4">
-		<div class="col-lg-7">
+		<div class="col-lg-8">
 			<h2>Add to your league</h2>
 			<div class="d-flex align-items-center flex-wrap gap-2 mb-2">
 				<label for="from">Draft classes</label>
@@ -37,18 +37,10 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 				<input type="number" class="form-control form-control-sm year" id="to" min="1946" max="2030" value="2030">
 				<span class="text-body-secondary" id="count"></span>
 			</div>
-			<div class="form-check mb-2">
-				<input class="form-check-input" type="checkbox" id="keep-photos">
-				<label class="form-check-label" for="keep-photos">Keep BBGM's own photos</label>
+			<div class="d-flex align-items-center gap-2 mb-3">
+				<button class="btn btn-primary text-nowrap" id="copy" disabled>Copy faces</button>
+				<span>&rarr; With God Mode on, paste in the Worker Console on your league's Danger Zone page at <a href="https://play.basketball-gm.com/">BBGM</a></span>
 			</div>
-			<button class="btn btn-primary" id="copy" disabled>Copy code</button>
-			<a href="#" class="ms-2" id="batch-toggle">Paste in batches</a>
-			<p class="text-body-secondary mt-2 mb-2">Turn on God Mode, then paste in Tools &gt; Danger Zone &gt; Worker console and click Run code. Run it again later to catch new draft classes.</p>
-			<div id="batches" class="mb-2" hidden></div>
-			<details class="mb-3">
-				<summary>Code</summary>
-				<pre class="code" id="code"></pre>
-			</details>
 
 			<h2>Downloads</h2>
 			<ul>
@@ -57,7 +49,7 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 			</ul>
 		</div>
 
-		<div class="col-lg-5">
+		<div class="col-lg-4">
 			<div class="d-flex align-items-baseline gap-2">
 				<h2 class="mb-2" id="viewer-name"></h2>
 				<span class="text-body-secondary" id="viewer-year"></span>
@@ -73,9 +65,6 @@ if (matchMedia("(prefers-color-scheme: dark)").matches) {
 	<h2 class="mt-4">Players</h2>
 	<input type="search" class="form-control form-control-sm search mb-2" id="search" placeholder="Search" autocomplete="off">
 	<div class="results" id="results"></div>
-
-	<h2 class="mt-4">By decade</h2>
-	<div id="decades"></div>
 </div>
 
 <script type="module" src="app.js"></script>

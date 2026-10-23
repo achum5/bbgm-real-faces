@@ -49,13 +49,6 @@ h3 { font-size: 16px; }
 .search {
 	max-width: 260px;
 }
-.code {
-	max-height: 300px;
-	overflow: auto;
-	font-size: 11px;
-	white-space: pre-wrap;
-	word-break: break-all;
-}
 
 .face svg {
 	display: block;
@@ -131,9 +124,8 @@ h3 { font-size: 16px; }
 	aspect-ratio: 2 / 3;
 }
 
-/* Search results and decade rows */
-.results,
-.decade {
+/* Search results */
+.results {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
@@ -154,35 +146,4 @@ h3 { font-size: 16px; }
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-.decade .player {
-	width: 72px;
-}
-.decade .face {
-	width: 72px;
-	height: 108px;
-}
-.decade .name {
-	font-size: 11px;
-	text-align: center;
-}
-.batch {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 6px;
-}
-.batch.done {
-	opacity: 0.5;
-}
-
-@media (max-width: 575px) {
-	.decade {
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		padding-bottom: 4px;
-	}
-	.decade .player {
-		flex: 0 0 auto;
-	}
 }
