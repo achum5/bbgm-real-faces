@@ -553,9 +553,9 @@ console.log(\`Updated \${count} players\`);`;
 
 // Real team names, logos and colors, from u/alexnoob's team file, plus each
 // team's real jersey style from this site's jerseys.json. The team file is the
-// same JSON that goes in BBGM's Global Settings > Team Info; this applies it to
-// the open league, every past season included, and saves it there too so new
-// leagues and future relocations use it.
+// same JSON that goes in BBGM's Global Settings > Team Info, but this only
+// applies it to the open league: its teams, every past season, and the
+// relocations still to come. Global Settings are left alone.
 const TEAM_FILE = "https://raw.githubusercontent.com/alexnoob/BasketBall-GM-Rosters/master/team%20data.json";
 const teamCode = `
 // Real team names and logos, from u/alexnoob: https://github.com/alexnoob/BasketBall-GM-Rosters
@@ -628,7 +628,31 @@ await bbgm.league.setGameAttributes({
 	})),
 });
 await bbgm.league.updateMeta();
-await bbgm.idb.meta.put("attributes", teamInfo, "realTeamInfo");
+// Relocations and expansion teams still to come in this league get it too
+const fixEvent = (e) => {
+	if (e.type === "teamInfo") {
+		return applyInfo(e.info, e.season, e.info.srID);
+	}
+	if (e.type === "expansionDraft") {
+		return e.info.teams.map((t) => applyInfo(t, e.season, t.srID)).some(Boolean);
+	}
+	return false;
+};
+const soon = await bbgm.idb.cache.scheduledEvents.getAll();
+for (const e of soon) {
+	if (fixEvent(e)) {
+		await bbgm.idb.cache.scheduledEvents.put(e);
+	}
+}
+const soonIds = new Set(soon.map((e) => e.id));
+const later = (await bbgm.idb.league.getAll("scheduledEvents")).filter((e) => !soonIds.has(e.id));
+const tx2 = bbgm.idb.league.transaction("scheduledEvents", "readwrite");
+for (const e of later) {
+	if (fixEvent(e)) {
+		tx2.store.put(e);
+	}
+}
+await tx2.done;
 await bbgm.toUI("realtimeUpdate", [["team"]]);
 console.log(\`Updated \${teamCount} teams\`);`;
 
