@@ -181,5 +181,17 @@
 			"head.shave": "rgba(0,0,0,0.25)",
 			"facialHair.id": "fullgoatee"
 		}
+	},
+	"10/23/2026 22:11:07|blackan01": {
+		"d": "accepted",
+		"t": "2026-10-24",
+		"from": {
+			"hairBg.id": "longHair",
+			"hair.id": "afro"
+		},
+		"to": {
+			"hairBg.id": "shaggy",
+			"hair.id": "afro2"
+		}
 	}
 }
