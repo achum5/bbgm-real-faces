@@ -414,7 +414,6 @@ show(pick(players));
 
 $("request-row").hidden = !FORM;
 $("request-toggle").onclick = () => openEditor($("request").hidden);
-$("request-close").onclick = () => openEditor(false);
 $("reset").onclick = startEditing;
 $("note").oninput = updateSend;
 $("send").onclick = async () => {
