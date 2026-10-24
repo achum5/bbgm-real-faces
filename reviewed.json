@@ -1,39 +1,115 @@
 {
 	"10/23/2026 19:18:18|braddga01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"hair.id": "crop"
+		},
+		"to": {
+			"hair.id": "tall-fade"
+		}
 	},
 	"10/23/2026 19:05:38|derozde01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"facialHair.id": "goatee-thin-stache",
+			"eyebrow.id": "eyebrow15",
+			"eyebrow.angle": 0
+		},
+		"to": {
+			"facialHair.id": "fullgoatee2",
+			"eyebrow.id": "eyebrow9",
+			"eyebrow.angle": -10
+		}
 	},
 	"10/23/2026 19:04:32|murraja01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"eye.angle": 0,
+			"mouth.id": "closed"
+		},
+		"to": {
+			"eye.angle": -4,
+			"mouth.id": "side"
+		}
 	},
 	"10/23/2026 19:03:52|gordoaa01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"hair.id": "cornrows"
+		},
+		"to": {
+			"hair.id": "dreads"
+		}
 	},
 	"10/23/2026 19:03:24|watsope01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"head.id": "head16",
+			"eyebrow.id": "eyebrow6",
+			"hair.id": "short"
+		},
+		"to": {
+			"head.id": "head14",
+			"eyebrow.id": "eyebrow17",
+			"hair.id": "cornrows"
+		}
 	},
 	"10/23/2026 19:01:33|jokicni01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"head.id": "head14",
+			"eyeLine.id": "none",
+			"facialHair.id": "beard2",
+			"eye.id": "eye16",
+			"eyebrow.id": "eyebrow3",
+			"eyebrow.angle": 0,
+			"hair.id": "short"
+		},
+		"to": {
+			"head.id": "head8",
+			"eyeLine.id": "line3",
+			"facialHair.id": "goatee-thin-stache",
+			"eye.id": "eye11",
+			"eyebrow.id": "eyebrow9",
+			"eyebrow.angle": -5,
+			"hair.id": "short2"
+		}
 	},
 	"10/23/2026 18:50:20|patteto01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"hair.id": "short"
+		},
+		"to": {
+			"hair.id": "short-bald"
+		}
 	},
 	"10/23/2026 13:40:55|knechda01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"hair.id": "juice"
+		},
+		"to": {
+			"hair.id": "messy"
+		}
 	},
 	"10/23/2026 11:24:29|whiteok01": {
 		"d": "accepted",
-		"t": "2026-10-23"
+		"t": "2026-10-23",
+		"from": {
+			"body.color": "#673a2a"
+		},
+		"to": {
+			"body.color": "#63453b"
+		}
 	},
 	"10/23/2026 11:17:49|iveyja01": {
 		"d": "declined",
@@ -45,6 +121,21 @@
 	},
 	"10/23/2026 19:47:16|leonaka01": {
 		"d": "accepted",
-		"t": "2026-10-24"
+		"t": "2026-10-24",
+		"from": {
+			"hairBg.id": "none",
+			"head.shave": "rgba(0,0,0,0.1)",
+			"eyebrow.id": "eyebrow6",
+			"hair.id": "short",
+			"mouth.id": "smile3"
+		},
+		"to": {
+			"hairBg.id": "shaggy",
+			"head.shave": "rgba(0,0,0,0.2)",
+			"eyebrow.id": "eyebrow13",
+			"hair.id": "cornrows",
+			"mouth.id": "mouth6"
+		},
+		"edited": true
 	}
 }

@@ -228,12 +228,26 @@ const loadRequests = async () => {
 		const paths = [...new Set((r[ci] ?? "").split("\n").map((l) => l.split(":")[0].trim()).filter(Boolean))];
 		const bad = !face || paths.some((p) => !Object.hasOwn(LEAVES, p));
 		const set = {};
+		// What those values were when they sent it, to show the face before
+		const was = {};
 		if (!bad) {
 			for (const p of paths) {
 				set[p] = getPath(face, p);
 			}
+			for (const line of (r[ci] ?? "").split("\n")) {
+				const m = line.match(/^([^:]+): (.*) -> (.*)$/);
+				const path = m?.[1].trim();
+				if (!m || !Object.hasOwn(set, path)) {
+					continue;
+				}
+				const like = getPath(row[4], path);
+				const v = typeof like === "number" ? Number(m[2]) : typeof like === "boolean" ? m[2] === "true" : m[2];
+				if (valid(path, v)) {
+					was[path] = v;
+				}
+			}
 		}
-		requests.push({ key: `${r[ti]}|${srID}`, when: r[ti] ?? "", srID, row, set, note: (r[ni] ?? "").trim(), bad });
+		requests.push({ key: `${r[ti]}|${srID}`, when: r[ti] ?? "", srID, row, set, was, note: (r[ni] ?? "").trim(), bad });
 	}
 	requests.reverse();
 };
@@ -265,7 +279,7 @@ const stopEditing = () => {
 };
 
 const decide = (req, decision, set = req.set, edited = false) => {
-	pending[req.key] = { decision, srID: req.srID, set, edited };
+	pending[req.key] = { decision, srID: req.srID, set, edited, was: req.was, suggested: req.set };
 	savePending();
 	render();
 };
@@ -274,11 +288,22 @@ const card = (req) => {
 	const div = document.createElement("div");
 	div.className = "review-card";
 	const current = req.row[4];
-	// Once accepted with edits, the card shows the edited face, which is what gets published
+	// Before -> suggested -> yours, when what was (or will be) published
+	// differs from the suggestion
 	const chosen = pending[req.key];
-	const edited = chosen?.decision === "accepted" && chosen.edited;
-	const proposed = applySet(current, edited ? chosen.set : req.set);
-	const lines = diff(current, proposed);
+	const record = reviewed[req.key];
+	let before = current;
+	let final;
+	if (chosen?.decision === "accepted") {
+		final = applySet(current, chosen.set);
+	} else if (!chosen && record?.d === "accepted" && record.from) {
+		before = applySet(current, record.from);
+		final = applySet(before, record.to);
+	}
+	const edited = chosen ? chosen.decision === "accepted" && chosen.edited : record?.edited;
+	const proposed = applySet(before, req.set);
+	const lines = diff(before, proposed);
+	const yours = final && diff(final, proposed).length > 0 ? diff(before, final) : [];
 
 	const head = document.createElement("div");
 	const name = document.createElement("b");
@@ -298,30 +323,54 @@ const card = (req) => {
 		img.onerror = () => img.remove();
 		viewer.append(img);
 	}
-	const now = document.createElement("div");
-	now.className = "face";
-	now.innerHTML = faceSvg(req.row, current);
-	const arrow = document.createElement("span");
-	arrow.className = "arrow";
-	arrow.textContent = "→";
-	const next = document.createElement("div");
-	next.className = "face";
-	viewer.append(now, arrow, next);
-	const redraw = (face = proposed) => {
-		const same = diff(current, face).length === 0;
-		arrow.hidden = same;
-		next.hidden = same;
-		next.innerHTML = same ? "" : faceSvg(req.row, face);
+	const box = () => {
+		const el = document.createElement("div");
+		el.className = "face";
+		return el;
+	};
+	const arrowEl = () => {
+		const el = document.createElement("span");
+		el.className = "arrow";
+		el.textContent = "→";
+		return el;
+	};
+	const now = box();
+	now.innerHTML = faceSvg(req.row, before);
+	const arrow1 = arrowEl();
+	const suggested = box();
+	const sameAsBefore = lines.length === 0;
+	arrow1.hidden = sameAsBefore;
+	suggested.hidden = sameAsBefore;
+	suggested.innerHTML = sameAsBefore ? "" : faceSvg(req.row, proposed);
+	const arrow2 = arrowEl();
+	const mine = box();
+	viewer.append(now, arrow1, suggested, arrow2, mine);
+	// The third face: yours, or the edit in progress
+	const redraw = (face = final) => {
+		const show = face !== undefined && diff(proposed, face).length > 0;
+		arrow2.hidden = !show;
+		mine.hidden = !show;
+		mine.innerHTML = show ? faceSvg(req.row, face) : "";
 	};
 	redraw();
 
 	const list = document.createElement("ul");
 	list.className = "changes";
-	for (const line of lines) {
-		const li = document.createElement("li");
-		li.textContent = line;
-		list.append(li);
-	}
+	const section = (label, items) => {
+		if (label) {
+			const li = document.createElement("li");
+			li.className = "changes-label";
+			li.textContent = label;
+			list.append(li);
+		}
+		for (const line of items) {
+			const li = document.createElement("li");
+			li.textContent = line;
+			list.append(li);
+		}
+	};
+	section(yours.length > 0 && lines.length > 0 ? "Suggested" : "", lines);
+	section(yours.length > 0 ? "Yours" : "", yours);
 	if (req.bad) {
 		const li = document.createElement("li");
 		li.className = "text-danger";
@@ -435,8 +484,16 @@ $("publish").onclick = async () => {
 			let accepted = 0;
 			let declined = 0;
 			for (const [key, p] of Object.entries(pending)) {
+				const record = { d: p.decision, t: new Date().toISOString().slice(0, 10) };
 				if (p.decision === "accepted") {
 					const row = index.get(p.srID);
+					// The values before and after, so the review page can show it later
+					const marked = Object.keys(p.set).length === 0;
+					record.from = marked ? (p.was ?? {}) : Object.fromEntries(Object.keys(p.set).map((path) => [path, row && getPath(row[4], path)]));
+					record.to = marked ? (p.suggested ?? {}) : p.set;
+					if (p.edited) {
+						record.edited = true;
+					}
 					const face = row && clean(applySet(row[4], p.set));
 					if (!face || !Object.entries(p.set).every(([path, v]) => valid(path, v))) {
 						throw new Error(`Couldn't apply the change for ${p.srID}`);
@@ -446,7 +503,7 @@ $("publish").onclick = async () => {
 				} else {
 					declined++;
 				}
-				done[key] = { d: p.decision, t: new Date().toISOString().slice(0, 10) };
+				done[key] = record;
 			}
 			const blob = async (content) => (await api("/git/blobs", { method: "POST", body: { content, encoding: "utf-8" } })).sha;
 			const files = [["reviewed.json", `${JSON.stringify(done, null, "\t")}\n`]];

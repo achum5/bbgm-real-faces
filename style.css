@@ -378,6 +378,12 @@ h3 { font-size: 16px; }
 	font-family: var(--bs-font-monospace);
 	font-size: 12px;
 }
+.changes .changes-label {
+	list-style: none;
+	margin-left: -18px;
+	font-family: var(--bs-body-font-family);
+	font-weight: 700;
+}
 .review-card .note {
 	margin-top: 6px;
 	padding: 6px 8px;
