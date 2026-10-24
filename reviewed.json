@@ -153,5 +153,17 @@
 			"head.shave": "rgba(0,0,0,0.25)",
 			"facialHair.id": "goatee19"
 		}
+	},
+	"10/23/2026 20:35:58|avdijde01": {
+		"d": "accepted",
+		"t": "2026-10-24",
+		"from": {
+			"head.shave": "rgba(40,25,15,0.4)",
+			"facialHair.id": "none"
+		},
+		"to": {
+			"head.shave": "rgba(40,25,15,0.2)",
+			"facialHair.id": "goatee19"
+		}
 	}
 }
