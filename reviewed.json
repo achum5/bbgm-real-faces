@@ -137,5 +137,21 @@
 			"mouth.id": "mouth6"
 		},
 		"edited": true
+	},
+	"10/23/2026 20:33:24|willigr01": {
+		"d": "accepted",
+		"t": "2026-10-24",
+		"from": {
+			"fatness": 0.2,
+			"body.color": "#80523e",
+			"head.shave": "rgba(0,0,0,0.3)",
+			"facialHair.id": "none"
+		},
+		"to": {
+			"fatness": 0.3,
+			"body.color": "#bb876f",
+			"head.shave": "rgba(0,0,0,0.25)",
+			"facialHair.id": "goatee19"
+		}
 	}
 }
