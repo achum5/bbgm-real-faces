@@ -193,5 +193,25 @@
 			"hairBg.id": "shaggy",
 			"hair.id": "afro2"
 		}
+	},
+	"10/23/2026 22:54:08|nuttde01": {
+		"d": "declined",
+		"t": "2026-10-24"
+	},
+	"10/23/2026 22:54:05|nuttde01": {
+		"d": "declined",
+		"t": "2026-10-24"
+	},
+	"10/23/2026 22:54:13|nuttde01": {
+		"d": "accepted",
+		"t": "2026-10-24",
+		"from": {
+			"head.id": "head6",
+			"eyeLine.id": "none"
+		},
+		"to": {
+			"head.id": "head9",
+			"eyeLine.id": "line4"
+		}
 	}
 }
