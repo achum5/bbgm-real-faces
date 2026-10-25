@@ -493,7 +493,7 @@ console.log(\`Updated \${count} players\`);`;
 // applies it to the open league: its teams, every past season, and the
 // relocations still to come. Global Settings are left alone.
 const TEAM_FILE = "https://raw.githubusercontent.com/alexnoob/BasketBall-GM-Rosters/master/team%20data.json";
-const teamCode = `
+const teamCode = (expansion) => `
 // Real team names and logos, from u/alexnoob: https://github.com/alexnoob/BasketBall-GM-Rosters
 const teamInfo = await (await fetch("${TEAM_FILE}")).json();
 // With each team's real jersey style, by era, from BBGM Real Cartoon Faces
@@ -564,22 +564,10 @@ await bbgm.league.setGameAttributes({
 	})),
 });
 await bbgm.league.updateMeta();
-// BBGM schedules a made-up expansion for real leagues (teams with srIDs like
-// "_SET"), and a realignment to fit it in. Real teams means none of that, so
-// every team event from that season on goes.
 const soon = await bbgm.idb.cache.scheduledEvents.getAll();
 const soonIds = new Set(soon.map((e) => e.id));
 const later = (await bbgm.idb.league.getAll("scheduledEvents")).filter((e) => !soonIds.has(e.id));
-const madeUp = [...soon, ...later]
-	.filter((e) => e.type === "expansionDraft" && e.info.teams.some((t) => t.srID?.startsWith("_")))
-	.map((e) => e.season);
-const TEAM_EVENTS = ["expansionDraft", "confsDivs", "teamInfo", "contraction"];
-const isMadeUp = (e) => madeUp.length > 0 && e.season >= Math.min(...madeUp) && TEAM_EVENTS.includes(e.type);
-let removed = 0;
-for (const e of soon.filter(isMadeUp)) {
-	await bbgm.idb.cache.scheduledEvents.delete(e.id);
-	removed += 1;
-}
+${expansion ? keepExpansion : dropExpansion}
 // Relocations and expansion teams still to come in this league get the real info too
 const fixEvent = (e) => {
 	if (e.type === "teamInfo") {
@@ -590,8 +578,12 @@ const fixEvent = (e) => {
 	}
 	return false;
 };
-for (const e of soon.filter((e) => !isMadeUp(e))) {
-	if (fixEvent(e)) {
+let removed = 0;
+for (const e of soon) {
+	if (isMadeUp(e)) {
+		await bbgm.idb.cache.scheduledEvents.delete(e.id);
+		removed += 1;
+	} else if (fixEvent(e)) {
 		await bbgm.idb.cache.scheduledEvents.put(e);
 	}
 }
@@ -606,7 +598,82 @@ for (const e of later) {
 }
 await tx2.done;
 await bbgm.toUI("realtimeUpdate", [["team"]]);
-console.log(\`Updated \${teamCount} teams\${removed ? \`, removed \${removed} made-up expansion events\` : ""}\`);`;
+console.log(\`Updated \${teamCount} teams${
+	expansion ? '\${restored ? ", put the 2028 expansion back" : ""}' : '\${removed ? \`, removed \${removed} made-up expansion events\` : ""}'
+}\`);`;
+
+// What happens to BBGM's 2028 expansion: by default it goes, or it stays with
+// Seattle as the SuperSonics
+const dropExpansion = `// BBGM schedules a made-up expansion for real leagues (teams with srIDs like
+// "_SET"), and a realignment to fit it in. Real teams means none of that, so
+// every team event from that season on goes.
+const madeUp = [...soon, ...later]
+	.filter((e) => e.type === "expansionDraft" && e.info.teams.some((t) => t.srID?.startsWith("_")))
+	.map((e) => e.season);
+const TEAM_EVENTS = ["expansionDraft", "confsDivs", "teamInfo", "contraction"];
+const isMadeUp = (e) => madeUp.length > 0 && e.season >= Math.min(...madeUp) && TEAM_EVENTS.includes(e.type);`;
+
+const keepExpansion = `// BBGM's 2028 expansion stays: Seattle comes back as the SuperSonics, and Las
+// Vegas, with no real team yet, keeps BBGM's name. Running this without the
+// expansion took it out, so if it's still to come it goes back in, from BBGM's
+// own events.
+const EXPANSION = await (await fetch("${SITE}expansion.json")).json();
+const events = [...soon, ...later].sort((a, b) => a.season - b.season || a.phase - b.phase);
+let restored = false;
+if (
+	!events.some((e) => e.type === "expansionDraft" && e.season === EXPANSION.season) &&
+	(bbgm.g.get("season") < EXPANSION.season || (bbgm.g.get("season") === EXPANSION.season && bbgm.g.get("phase") < EXPANSION.phase))
+) {
+	// Each franchise's tid by its srID by then, and the tids taken by then
+	const tidOf = new Map(teams.map((t) => [t.srID, t.tid]));
+	let tid = Math.max(...teams.map((t) => t.tid));
+	for (const e of events) {
+		for (const t of e.type === "expansionDraft" ? e.info.teams : e.type === "teamInfo" ? [e.info] : []) {
+			if (t.tid !== undefined) {
+				tidOf.set(t.srID, t.tid);
+				tid = Math.max(tid, t.tid);
+			}
+		}
+	}
+	if (Object.keys(EXPANSION.realign.dids).every((srID) => tidOf.has(srID))) {
+		// Numbers the whole league retired, like Bill Russell's 6
+		const enabled = teams.filter((t) => !t.disabled);
+		const retired = (enabled[0].retiredJerseyNumbers ?? []).filter((r) =>
+			enabled.every((t) => t.retiredJerseyNumbers?.some((x) => x.number === r.number && x.pid === r.pid)),
+		);
+		const added = [
+			{ type: "confsDivs", season: EXPANSION.season, phase: EXPANSION.phase, info: { confs: EXPANSION.confs, divs: EXPANSION.divs, teams: [] } },
+			{
+				type: "expansionDraft",
+				season: EXPANSION.season,
+				phase: EXPANSION.phase,
+				info: { teams: EXPANSION.teams.map((t) => ({ ...t, tid: ++tid, retiredJerseyNumbers: structuredClone(retired) })) },
+			},
+			...Object.entries(EXPANSION.realign.dids).map(([srID, did]) => ({
+				type: "teamInfo",
+				season: EXPANSION.realign.season,
+				phase: EXPANSION.realign.phase,
+				info: { tid: tidOf.get(srID), srID, did },
+			})),
+		];
+		for (const e of added) {
+			e.id = await bbgm.idb.cache.scheduledEvents.add(e);
+			soon.push(e);
+		}
+		restored = true;
+	}
+}
+for (const e of [...soon, ...later]) {
+	if (e.type === "expansionDraft") {
+		for (const t of e.info.teams) {
+			if (t.srID === "_SET") {
+				t.srID = "SEA";
+				t.abbrev = "SEA";
+			}
+		}
+	}
+}
+const isMadeUp = () => false;`;
 
 // Turning God Mode off leaves the league marked as having used it, which is
 // what keeps achievements off; clearing that mark too lets them count again
@@ -620,10 +687,11 @@ const faces = new Map();
 for (const [id, , , , face] of await response.json()) {
 	faces.set(id, face);
 }
-${applyCode}${$("teams").checked ? teamCode : ""}${$("god-off").checked ? godCode($("achievements").checked) : ""}`;
+${applyCode}${$("teams").checked ? teamCode($("expansion").checked) : ""}${$("god-off").checked ? godCode($("achievements").checked) : ""}`;
 
-// The options start on, and each device remembers what its user turned off
-const OPTIONS = ["teams", "god-off", "achievements"];
+// The options start as the page has them, and each device remembers what its
+// user changed
+const OPTIONS = ["teams", "expansion", "god-off", "achievements"];
 const remember = () => {
 	try {
 		for (const id of OPTIONS) {
@@ -633,16 +701,32 @@ const remember = () => {
 };
 for (const id of OPTIONS) {
 	try {
-		if (localStorage.getItem(`option-${id}`) === "0") {
-			$(id).checked = false;
+		const saved = localStorage.getItem(`option-${id}`);
+		if (saved !== null) {
+			$(id).checked = saved === "1";
 		}
 	} catch {}
 }
-// Allowing achievements means God Mode has to go off too
+// Allowing achievements means God Mode has to go off too, and the expansion
+// option is part of real teams
 if ($("achievements").checked) {
 	$("god-off").checked = true;
 }
-$("teams").onchange = remember;
+if ($("expansion").checked) {
+	$("teams").checked = true;
+}
+$("teams").onchange = () => {
+	if (!$("teams").checked) {
+		$("expansion").checked = false;
+	}
+	remember();
+};
+$("expansion").onchange = () => {
+	if ($("expansion").checked) {
+		$("teams").checked = true;
+	}
+	remember();
+};
 $("achievements").onchange = () => {
 	if ($("achievements").checked) {
 		$("god-off").checked = true;
