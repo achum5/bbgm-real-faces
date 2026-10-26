@@ -570,5 +570,15 @@
 		"to": {
 			"fatness": 0.7
 		}
+	},
+	"10/26/2026 15:59:13|taylole01": {
+		"d": "accepted",
+		"t": "2026-10-26",
+		"from": {
+			"hair.id": "short3"
+		},
+		"to": {
+			"hair.id": "tall-fade"
+		}
 	}
 }
