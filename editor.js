@@ -21,21 +21,23 @@ const CROPS = {
 	eyeLine: [90, 225, 220, 140],
 	smileLine: [110, 330, 180, 135],
 	miscLine: HEAD,
-	glasses: [60, 220, 280, 150],
+	body: [-60, 360, 520, 240],
+	glasses: [40, 200, 320, 260],
 	accessories: [10, 30, 380, 260],
 };
 
 const PARTS = [
 	{ label: "Head", rows: [["head", "Shape"]], sliders: [["fatness", "Width", 0, 1, 0.05]], colors: ["body.color", SKINS, "Skin"] },
-	{ label: "Hair", rows: [["hair", "Style"], ["hairBg", "Behind the head"]], colors: ["hair.color", HAIR_COLORS, "Color"] },
+	{ label: "Body", rows: [["body", "Build"]], sliders: [["body.size", "Size", 0.8, 1.2, 0.01]] },
+	{ label: "Hair", rows: [["hair", "Style"], ["hairBg", "Behind the head"]], toggles: [["hair.flip", "Mirror"]], colors: ["hair.color", HAIR_COLORS, "Color"] },
 	{ label: "Eyes", rows: [["eye"]], sliders: [["eye.angle", "Tilt", -10, 15, 1]] },
 	{ label: "Brows", rows: [["eyebrow"]], sliders: [["eyebrow.angle", "Tilt", -15, 20, 1]] },
-	{ label: "Nose", rows: [["nose"]], sliders: [["nose.size", "Size", 0.5, 1.25, 0.05]] },
-	{ label: "Mouth", rows: [["mouth"]] },
+	{ label: "Nose", rows: [["nose"]], sliders: [["nose.size", "Size", 0.5, 1.5, 0.05]], toggles: [["nose.flip", "Mirror"]] },
+	{ label: "Mouth", rows: [["mouth"]], toggles: [["mouth.flip", "Mirror"]] },
 	{ label: "Facial hair", rows: [["facialHair"]], sliders: [["stubble", "Stubble", 0, 0.6, 0.05]] },
 	{ label: "Ears", rows: [["ear"]], sliders: [["ear.size", "Size", 0.5, 1.5, 0.05]] },
-	{ label: "Lines", rows: [["eyeLine", "Around the eyes"], ["smileLine", "Smile lines"], ["miscLine", "Other"]] },
-	{ label: "Extras", rows: [["glasses", "Glasses"], ["accessories", "Headwear"]] },
+	{ label: "Lines", rows: [["eyeLine", "Around the eyes"], ["smileLine", "Smile lines"], ["miscLine", "Other"]], sliders: [["smileLine.size", "Smile lines", 0.3, 2, 0.05]] },
+	{ label: "Extras", rows: [["glasses", "Glasses and face mask"], ["accessories", "Headwear"]] },
 ];
 
 export const getPath = (face, path) => {
@@ -182,6 +184,20 @@ export const createEditor = ({ tabs, panel, options, draw, onChange }) => {
 			};
 			input.onchange = () => renderPart();
 			row.append(name, input);
+			panel.append(row);
+		}
+		for (const [path, text] of part.toggles ?? []) {
+			const row = document.createElement("label");
+			row.className = "form-check toggle";
+			const input = document.createElement("input");
+			input.type = "checkbox";
+			input.className = "form-check-input";
+			input.checked = Boolean(getPath(face, path));
+			input.onchange = () => edit(path, input.checked);
+			const name = document.createElement("span");
+			name.className = "form-check-label";
+			name.textContent = text;
+			row.append(input, name);
 			panel.append(row);
 		}
 		if (part.colors) {

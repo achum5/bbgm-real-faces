@@ -322,11 +322,14 @@ h3 { font-size: 16px; }
 	margin-top: 8px;
 }
 .slider span {
-	width: 56px;
+	min-width: 56px;
 	font-weight: 700;
 }
 .slider .form-range {
 	flex: 1;
+}
+.toggle {
+	margin-top: 8px;
 }
 .swatches {
 	display: flex;
