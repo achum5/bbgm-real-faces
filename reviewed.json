@@ -525,5 +525,16 @@
 	"10/24/2026 14:12:24|harremo01": {
 		"d": "declined",
 		"t": "2026-10-25"
+	},
+	"10/26/2026 1:41:53|hamilri01": {
+		"d": "accepted",
+		"t": "2026-10-26",
+		"from": {
+			"glasses.id": "none"
+		},
+		"to": {
+			"glasses.id": "facemask"
+		},
+		"edited": true
 	}
 }
