@@ -548,5 +548,17 @@
 			"hairBg.id": "shaggy",
 			"hair.id": "curly"
 		}
+	},
+	"10/26/2026 14:52:58|onealsh01": {
+		"d": "accepted",
+		"t": "2026-10-26",
+		"from": {
+			"facialHair.id": "goatee-thin-stache",
+			"hair.id": "crop"
+		},
+		"to": {
+			"facialHair.id": "fullgoatee2",
+			"hair.id": "bald"
+		}
 	}
 }
