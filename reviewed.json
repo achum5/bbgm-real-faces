@@ -580,5 +580,43 @@
 		"to": {
 			"hair.id": "tall-fade"
 		}
+	},
+	"10/26/2026 21:19:56|castlst01": {
+		"d": "accepted",
+		"t": "2026-10-27",
+		"from": {
+			"fatness": 0.25,
+			"head.id": "head12",
+			"hair.id": "cornrows"
+		},
+		"to": {
+			"fatness": 0.1,
+			"head.id": "head7",
+			"hair.id": "dreads"
+		}
+	},
+	"10/26/2026 21:20:29|bryanca01": {
+		"d": "declined",
+		"t": "2026-10-27"
+	},
+	"10/26/2026 17:24:25|bryanko01": {
+		"d": "accepted",
+		"t": "2026-10-27",
+		"from": {
+			"head.id": "head12"
+		},
+		"to": {
+			"head.id": "head10"
+		}
+	},
+	"10/26/2026 17:14:41|wallabe01": {
+		"d": "accepted",
+		"t": "2026-10-27",
+		"from": {
+			"hair.id": "short"
+		},
+		"to": {
+			"hair.id": "afro2"
+		}
 	}
 }
