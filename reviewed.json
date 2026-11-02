@@ -1222,5 +1222,19 @@
 		"to": {
 			"hair.id": "messy"
 		}
+	},
+	"11/2/2026 15:02:04|duckwke01": {
+		"d": "accepted",
+		"t": "2026-11-02",
+		"from": {
+			"fatness": 0.6,
+			"body.size": 1.05,
+			"head.id": "head16"
+		},
+		"to": {
+			"fatness": 0.7,
+			"body.size": 1.09,
+			"head.id": "head13"
+		}
 	}
 }
