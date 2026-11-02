@@ -788,3 +788,14 @@ $("copy").onclick = () => {
 	copyText(buildCode(), $("copy"));
 	countEvent("copy-faces", "Copy faces");
 };
+
+// Links for BBGM's Global Settings, which loads each file from its URL
+const RAW = "https://raw.githubusercontent.com/achum5/bbgm-real-faces/main/";
+$("copy-players").onclick = () => {
+	copyText(`${RAW}player-photos.json`, $("copy-players"));
+	countEvent("copy-players-link", "Copy players link");
+};
+$("copy-teams").onclick = () => {
+	copyText(`${RAW}team-info.json`, $("copy-teams"));
+	countEvent("copy-teams-link", "Copy teams link");
+};

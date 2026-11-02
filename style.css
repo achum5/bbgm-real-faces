@@ -11,6 +11,8 @@ a:hover {
 }
 h1 { font-size: 24px; }
 h2 { font-size: 20px; }
+/* The copy buttons line up, so their notes do too */
+.copy-btn { min-width: 150px; }
 h3 { font-size: 16px; }
 .btn {
 	font-size: 0.8125rem;

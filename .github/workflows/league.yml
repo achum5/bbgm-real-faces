@@ -3,7 +3,11 @@ name: Update league file
 on:
   push:
     branches: [main]
-    paths: [players.json]
+    paths: [players.json, jerseys.json, .github/global-settings.mjs]
+  # u/alexnoob's team file changes on its own, so the Team Info file is
+  # rebuilt every day too
+  schedule:
+    - cron: "17 9 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,10 +22,11 @@ jobs:
         with:
           node-version: 22
       - run: node .github/update-league.mjs
+      - run: node .github/global-settings.mjs
       - name: Commit
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name achum5
           git config user.email 45132830+achum5@users.noreply.github.com
-          git commit -am "League file: faces from players.json"
+          git commit -am "League file and Global Settings files from players.json"
           git push
