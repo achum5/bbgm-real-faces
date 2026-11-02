@@ -49,8 +49,11 @@ for (const [srID, { jersey, seasons }] of Object.entries(jerseys)) {
 }
 
 // BBGM schedules a made-up 2028 expansion in Seattle (srID "_SET"), which
-// Global Settings can't take out the way the console code does - so Seattle
-// comes back as the SuperSonics, in their last look.
+// Global Settings can't take out the way the console code does. As it comes,
+// for a league that wants BBGM's own expansion teams...
+write("team-info-bbgm-expansion.json", teamInfo);
+
+// ...and by default, Seattle comes back as the SuperSonics, in their last look.
 const sonics = teamInfo.SEA;
 if (sonics) {
 	const last = Object.assign({}, ...Object.keys(sonics.seasons ?? {}).sort().map((s) => sonics.seasons[s]));
