@@ -740,7 +740,7 @@ $("god-off").onchange = () => {
 	remember();
 };
 
-const copyText = async (text, button) => {
+const toClipboard = async (text) => {
 	try {
 		await navigator.clipboard.writeText(text);
 	} catch {
@@ -751,12 +751,38 @@ const copyText = async (text, button) => {
 		document.execCommand("copy");
 		area.remove();
 	}
+};
+
+const copyText = async (text, button) => {
+	await toClipboard(text);
 	const label = button.textContent;
 	button.textContent = "Copied";
 	setTimeout(() => {
 		button.textContent = label;
 	}, 1500);
 };
+
+// Clicking a face copies it as facesjs JSON, in his team's jersey - the new
+// face, while editing, copies the edited one
+const copyFace = async (el, face) => {
+	await toClipboard(JSON.stringify({ ...face, jersey: { id: current.uniform[0] }, teamColors: current.uniform[1] }, null, 2));
+	el.classList.add("copied");
+	setTimeout(() => {
+		el.classList.remove("copied");
+	}, 1500);
+};
+for (const [el, face] of [
+	[viewerFace, () => current.face],
+	[$("viewer-new"), () => editor.face],
+]) {
+	el.onclick = () => copyFace(el, face());
+	el.onkeydown = (event) => {
+		if (event.key === "Enter" || event.key === " ") {
+			event.preventDefault();
+			copyFace(el, face());
+		}
+	};
+}
 
 $("copy").onclick = () => {
 	copyText(buildCode(), $("copy"));
