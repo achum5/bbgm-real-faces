@@ -691,7 +691,7 @@ ${applyCode}${$("teams").checked ? teamCode($("expansion").checked) : ""}${$("go
 
 // The options start as the page has them, and each device remembers what its
 // user changed
-const OPTIONS = ["teams", "expansion", "god-off", "achievements", "sonics"];
+const OPTIONS = ["teams", "expansion", "god-off", "achievements"];
 const remember = () => {
 	try {
 		for (const id of OPTIONS) {
@@ -795,8 +795,7 @@ $("copy-players").onclick = () => {
 	copyText(`${RAW}player-photos.json`, $("copy-players"));
 	countEvent("copy-players-link", "Copy players link");
 };
-$("sonics").onchange = remember;
 $("copy-teams").onclick = () => {
-	copyText(`${RAW}${$("sonics").checked ? "team-info.json" : "team-info-bbgm-expansion.json"}`, $("copy-teams"));
+	copyText(`${RAW}team-info.json`, $("copy-teams"));
 	countEvent("copy-teams-link", "Copy teams link");
 };
