@@ -1498,5 +1498,15 @@
 			"facialHair.id": "goatee18",
 			"hair.id": "blowoutFade"
 		}
+	},
+	"11/16/2026 20:02:54|pippesc02": {
+		"d": "accepted",
+		"t": "2026-11-17",
+		"from": {
+			"body.size": 0.85
+		},
+		"to": {
+			"body.size": 1
+		}
 	}
 }
