@@ -1522,5 +1522,61 @@
 			"mouth.id": "mouth5",
 			"nose.id": "nose2"
 		}
+	},
+	"11/23/2026 10:00:28|chalmma01": {
+		"d": "accepted",
+		"t": "2026-11-23",
+		"from": {
+			"facialHair.id": "goatee-thin-stache",
+			"hair.id": "afro"
+		},
+		"to": {
+			"facialHair.id": "goatee19",
+			"hair.id": "afro2"
+		}
+	},
+	"11/23/2026 9:59:31|mensapo01": {
+		"d": "accepted",
+		"t": "2026-11-23",
+		"from": {
+			"fatness": 0.15
+		},
+		"to": {
+			"fatness": 0
+		}
+	},
+	"11/23/2026 9:59:12|jennibr01": {
+		"d": "accepted",
+		"t": "2026-11-23",
+		"from": {
+			"head.id": "head12"
+		},
+		"to": {
+			"head.id": "head11"
+		}
+	},
+	"11/23/2026 9:58:57|malonje01": {
+		"d": "accepted",
+		"t": "2026-11-23",
+		"from": {
+			"head.shave": "rgba(0,0,0,0.2)",
+			"facialHair.id": "beard3"
+		},
+		"to": {
+			"head.shave": "rgba(0,0,0,0.35)",
+			"facialHair.id": "fullgoatee3"
+		}
+	},
+	"11/23/2026 9:58:28|greenjo02": {
+		"d": "accepted",
+		"t": "2026-11-23",
+		"from": {
+			"head.shave": "rgba(0,0,0,0.4)",
+			"facialHair.id": "goatee-thin"
+		},
+		"to": {
+			"head.shave": "rgba(0,0,0,0.05)",
+			"facialHair.id": "goatee19"
+		}
 	}
 }
