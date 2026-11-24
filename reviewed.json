@@ -1578,5 +1578,31 @@
 			"head.shave": "rgba(0,0,0,0.05)",
 			"facialHair.id": "goatee19"
 		}
+	},
+	"11/24/2026 0:37:33|nixda01": {
+		"d": "accepted",
+		"t": "2026-11-24",
+		"from": {
+			"hair.id": "afro"
+		},
+		"to": {
+			"hair.id": "afro2"
+		}
+	},
+	"11/23/2026 10:40:15|mccaija01": {
+		"d": "accepted",
+		"t": "2026-11-24",
+		"from": {
+			"head.id": "head4",
+			"facialHair.id": "none",
+			"eye.id": "eye18",
+			"mouth.id": "smile"
+		},
+		"to": {
+			"head.id": "head11",
+			"facialHair.id": "goatee4-stache",
+			"eye.id": "eye13",
+			"mouth.id": "smile3"
+		}
 	}
 }
